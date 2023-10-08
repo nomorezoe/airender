@@ -55,9 +55,11 @@ class Model:
         model_id = CONTROLNET_MODEL_IDS[task_name]
         controlnet = ControlNetModel.from_pretrained(model_id,
                                                      torch_dtype=torch.float32)
-        pipe = StableDiffusionControlNetPipeline.from_pretrained(
-            base_model_id,
-            safety_checker=None,
+        pipe = StableDiffusionControlNetPipeline.from_single_file(
+            "models/deliberate_v3.safetensors",
+            use_safetensors=True, 
+            load_safety_checker=False,
+            #safety_checker=None,
             controlnet=controlnet,
             torch_dtype=torch.float32)
         pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(#UniPCMultistepScheduler.from_config(

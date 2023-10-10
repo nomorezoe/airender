@@ -1,6 +1,6 @@
 accelerate==0.21.0
 controlnet_aux==0.0.6
-diffusers==0.18.2
+diffusers==0.21.4
 einops==0.6.1
 gradio==3.37.0
 huggingface-hub==0.16.4

@@ -9,6 +9,7 @@ from controlnet_aux.util import HWC3
 from diffusers import (ControlNetModel, DiffusionPipeline,
                        StableDiffusionControlNetPipeline,
                        UniPCMultistepScheduler,
+                       DPMSolverMultistepScheduler,
                        EulerAncestralDiscreteScheduler)
 
 from cv_utils import resize_image
@@ -56,14 +57,18 @@ class Model:
         controlnet = ControlNetModel.from_pretrained(model_id,
                                                      torch_dtype=torch.float32)
         pipe = StableDiffusionControlNetPipeline.from_single_file(
-            "models/deliberate_v3.safetensors",
+            "models/revAnimated_v11.safetensors",
             use_safetensors=True, 
             load_safety_checker=False,
             #safety_checker=None,
             controlnet=controlnet,
+            local_files_only=True,
             torch_dtype=torch.float32)
-        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(#UniPCMultistepScheduler.from_config(
-            pipe.scheduler.config)
+        #pipe.load_lora_weights("./models", weight_name="Drawing.safetensors")
+
+        #pipe.unet.load_attn_procs("./models/CineStyle5.safetensors",local_files_only=True)
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(#UniPCMultistepScheduler.from_config(
+            pipe.scheduler.config, use_karras_sigmas=True,algorithm_type="dpmsolver++")
         if self.device.type == 'cuda':
             pipe.enable_xformers_memory_efficient_attention()
         pipe.to(self.device)

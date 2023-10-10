@@ -62,7 +62,7 @@ def inpaint_it(image, type):
 #/Users/zoewang/Documents/renderbackend/ControlNet-v1-1/models/adetailer/face_yolov8n.pt
 
     with change_torch_load():
-        pred = predictor(ad_models[type], image, 0.3, "mps")
+        pred = predictor(ad_models[type], image, 0.3, 'cuda' if torch.cuda.is_available() else 'mps')
 
     bboxes=pred.bboxes
     print('bboxes')
@@ -117,7 +117,7 @@ def inpaint_it(image, type):
         )
         #pipeline.load_lora_weights("./models", weight_name="Drawing.safetensors")
 
-        pipeline.to('mps')
+        pipeline.to('cuda' if torch.cuda.is_available() else 'mps')
         #pipeline.scheduler = diffusers.EulerAncestralDiscreteScheduler.from_config(pipeline.scheduler.config)
         #pipeline.scheduler = diffusers.DDIMScheduler.from_config(pipeline.scheduler.config)
 

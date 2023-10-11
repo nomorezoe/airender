@@ -11,7 +11,7 @@ import time
 start_time = time.time() 
 model = Model(task_name='depth')
 #model.set_base_model('SdValar/deliberate2')
-#model.set_base_model('stablediffusionapi/deliberate-v2')
+model.set_base_model('stablediffusionapi/deliberate-v2')
 #demo = create_demo(model.process_depth)
 image = Image.open("./test/testwriteimage.png")
 

@@ -57,7 +57,7 @@ class Model:
         controlnet = ControlNetModel.from_pretrained(model_id,
                                                      torch_dtype=torch.float32)
         pipe = StableDiffusionControlNetPipeline.from_pretrained(
-            "stablediffusionapi/deliberate-v2",
+            base_model_id,
             use_safetensors=True, 
             load_safety_checker=False,
             #safety_checker=None,

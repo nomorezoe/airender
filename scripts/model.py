@@ -63,7 +63,8 @@ class Model:
             #safety_checker=None,
             controlnet=controlnet,
             local_files_only=True,
-            torch_dtype=torch.float32)
+            torch_dtype=torch.float32,
+            device_map="auto",)
         #pipe.load_lora_weights("./models", weight_name="Drawing.safetensors")
 
         #pipe.unet.load_attn_procs("./models/CineStyle5.safetensors",local_files_only=True)
@@ -71,7 +72,7 @@ class Model:
             pipe.scheduler.config, use_karras_sigmas=True,algorithm_type="dpmsolver++")
         if self.device.type == 'cuda':
             pipe.enable_xformers_memory_efficient_attention()
-        pipe.to(self.device)
+        #pipe.to(self.device)
         torch.cuda.empty_cache()
         gc.collect()
         self.base_model_id = base_model_id

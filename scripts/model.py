@@ -62,7 +62,6 @@ class Model:
             load_safety_checker=False,
             #safety_checker=None,
             controlnet=controlnet,
-            local_files_only=True,
             torch_dtype=torch.float32,
             device_map="auto",)
         #pipe.load_lora_weights("./models", weight_name="Drawing.safetensors")

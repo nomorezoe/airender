@@ -100,15 +100,15 @@ def inpaint_it(image, type):
         #init_image.show()
         #mask_image.show()
 
-        pipeline = StableDiffusionInpaintPipeline.from_single_file(
+        pipeline = StableDiffusionInpaintPipeline.from_pretrained(
             #'runwayml/stable-diffusion-inpainting',
             #"CompVis/ldm-super-resolution-4x-openimages",
             #"stablediffusionapi/deliberate-v2",
-            #"5w4n/deliberate-v2-inpainting",
+            "5w4n/deliberate-v2-inpainting",
             #"Uminosachi/Deliberate-inpainting",
             #"XpucT/Deliberate",
             #"stabilityai/stable-diffusion-2-inpainting",
-            "models/deliberate_v3-inpainting.safetensors",
+            #"models/deliberate_v3-inpainting.safetensors",
             #use_safetensors=True, 
             safety_checker=None,
             torch_dtype=torch.float32,

@@ -44,7 +44,7 @@ def change_torch_load():
         torch.load = orig
 
 
-def inpaint_it(image, type):
+def inpaint_it(pipeline, image, type):
     predictor = ultralytics_predict
 
     ad_models = {
@@ -69,6 +69,8 @@ def inpaint_it(image, type):
     print(bboxes)
     masks = pred_preprocessing(pred)
     #masks[0].show()
+
+    
 
     for mask in masks:
         mask_image=mask
@@ -100,28 +102,7 @@ def inpaint_it(image, type):
         #init_image.show()
         #mask_image.show()
 
-        pipeline = StableDiffusionInpaintPipeline.from_pretrained(
-            #'runwayml/stable-diffusion-inpainting',
-            #"CompVis/ldm-super-resolution-4x-openimages",
-            #"stablediffusionapi/deliberate-v2",
-            "5w4n/deliberate-v2-inpainting",
-            #"Uminosachi/Deliberate-inpainting",
-            #"XpucT/Deliberate",
-            #"stabilityai/stable-diffusion-2-inpainting",
-            #"models/deliberate_v3-inpainting.safetensors",
-            #use_safetensors=True, 
-            safety_checker=None,
-            torch_dtype=torch.float32,
-            load_safety_checker=False,
-            local_files_only=True
-        )
-        #pipeline.load_lora_weights("./models", weight_name="Drawing.safetensors")
-
-        #pipeline.enable_sequential_cpu_offload()
-        pipeline.to('cuda' if torch.cuda.is_available() else 'mps')
-        #pipeline.scheduler = diffusers.EulerAncestralDiscreteScheduler.from_config(pipeline.scheduler.config)
-        #pipeline.scheduler = diffusers.DDIMScheduler.from_config(pipeline.scheduler.config)
-
+        
         prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
         n_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck"
     #,

@@ -6,7 +6,9 @@ from model import Model
 from PIL import Image
 import random
 from process_inpaint import inpaint_it
-    
+import time
+
+start_time = time.time() 
 model = Model(task_name='depth')
 #model.set_base_model('SdValar/deliberate2')
 #model.set_base_model('stablediffusionapi/deliberate-v2')
@@ -21,8 +23,11 @@ prompt = "20-year-old African American woman and a chic Caucasian woman, in New 
 n_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck"
 re = model.process_depth(image, prompt=prompt, num_images=1, additional_prompt=prompt, negative_prompt=n_prompt, image_resolution=840, preprocess_resolution=512,num_steps=25, guidance_scale=7.0, seed=int(random.randrange(4294967294)), preprocessor_name='Midas', callback=progress)#
 
+print(f"first time {time.time() - start_time}")
 image = re[1]
 
 image = inpaint_it(image,"face_yolov8n.pt")
 image = inpaint_it(image,"hand_yolov8n.pt")
 image.save("test.png")
+
+print(f"total time {time.time() - start_time}")

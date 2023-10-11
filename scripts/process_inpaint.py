@@ -113,6 +113,7 @@ def inpaint_it(image, type):
             safety_checker=None,
             torch_dtype=torch.float32,
             load_safety_checker=False,
+            local_files_only=True
         )
         #pipeline.load_lora_weights("./models", weight_name="Drawing.safetensors")
 

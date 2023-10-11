@@ -62,7 +62,8 @@ class Model:
             load_safety_checker=False,
             #safety_checker=None,
             controlnet=controlnet,
-            torch_dtype=torch.float32,)
+            torch_dtype=torch.float32,
+            local_files_only=True)
         #pipe.load_lora_weights("./models", weight_name="Drawing.safetensors")
 
         #pipe.unet.load_attn_procs("./models/CineStyle5.safetensors",local_files_only=True)

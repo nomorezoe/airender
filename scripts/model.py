@@ -70,8 +70,8 @@ class Model:
             pipe.scheduler.config, use_karras_sigmas=True,algorithm_type="dpmsolver++")
         if self.device.type == 'cuda':
             pipe.enable_xformers_memory_efficient_attention()
-        #pipe.to(self.device)
-        pipe.enable_sequential_cpu_offload()
+        pipe.to(self.device)
+        #pipe.enable_sequential_cpu_offload()
         torch.cuda.empty_cache()
         gc.collect()
         self.base_model_id = base_model_id

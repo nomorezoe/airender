@@ -116,8 +116,8 @@ def inpaint_it(image, type):
         )
         #pipeline.load_lora_weights("./models", weight_name="Drawing.safetensors")
 
-        pipe.enable_sequential_cpu_offload()
-        #pipeline.to('cuda' if torch.cuda.is_available() else 'mps')
+        #pipeline.enable_sequential_cpu_offload()
+        pipeline.to('cuda' if torch.cuda.is_available() else 'mps')
         #pipeline.scheduler = diffusers.EulerAncestralDiscreteScheduler.from_config(pipeline.scheduler.config)
         #pipeline.scheduler = diffusers.DDIMScheduler.from_config(pipeline.scheduler.config)
 

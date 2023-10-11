@@ -19,7 +19,7 @@ import os
 from diffusers import StableDiffusionInpaintPipeline, StableDiffusionInpaintPipelineLegacy
 
 def progress(step, timestep, latents):
-    print(step, timestep, latents[0][0][0][0], flush=True)
+    print(step, timestep, latents[0][0][0][0], flush=False)
 
 def pred_preprocessing(pred: PredictOutput):
     pred = filter_by_ratio(
@@ -65,8 +65,8 @@ def inpaint_it(pipeline, image, type):
         pred = predictor(ad_models[type], image, 0.3, 'cuda' if torch.cuda.is_available() else 'mps')
 
     bboxes=pred.bboxes
-    print('bboxes')
-    print(bboxes)
+    #print('bboxes')
+    #print(bboxes)
     masks = pred_preprocessing(pred)
     #masks[0].show()
 

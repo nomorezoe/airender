@@ -12,6 +12,7 @@ from controlnet_aux.util import HWC3
 from cv_utils import resize_image
 from depth_estimator import DepthEstimator
 from image_segmentor import ImageSegmentor
+import time
 
 
 class Preprocessor:
@@ -22,6 +23,7 @@ class Preprocessor:
         self.name = ''
 
     def load(self, name: str) -> None:
+        start_time = time.time()  
         if name == self.name:
             return
         if name == 'HED':
@@ -52,6 +54,7 @@ class Preprocessor:
             raise ValueError
         torch.cuda.empty_cache()
         gc.collect()
+        print(f"time - load preproccessor: {time.time() - start_time}")
         self.name = name
 
     def __call__(self, image: PIL.Image.Image, **kwargs) -> PIL.Image.Image:

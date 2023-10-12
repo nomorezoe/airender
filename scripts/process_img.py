@@ -38,7 +38,7 @@ pipeline = StableDiffusionInpaintPipeline.from_single_file(
         )
         #pipeline.load_lora_weights("./models", weight_name="Drawing.safetensors")
 
-pipeline.to('cuda' if start_device=="cuda" else 'mps')
+pipeline.to('cuda')
         #pipeline.scheduler = diffusers.EulerAncestralDiscreteScheduler.from_config(pipeline.scheduler.config)
         #pipeline.scheduler = diffusers.DDIMScheduler.from_config(pipeline.scheduler.config)
 

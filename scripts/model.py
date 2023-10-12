@@ -34,8 +34,9 @@ CONTROLNET_MODEL_IDS = {
 
 
 def download_all_controlnet_weights() -> None:
-    for model_id in CONTROLNET_MODEL_IDS.values():
-        ControlNetModel.from_pretrained(model_id)
+    ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-depth")
+    #for model_id in CONTROLNET_MODEL_IDS.values():
+    #   ControlNetModel.from_pretrained(model_id)
 
 
 class Model:

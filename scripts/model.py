@@ -39,7 +39,7 @@ def download_all_controlnet_weights() -> None:
 
 class Model:
     def __init__(self,
-                 base_model_id: str = 'models/deliberate_v2.safetensors',
+                 base_model_id: str = 'models/deliberate_v3.safetensors',
                  task_name: str = 'Canny',
                  device: str = 'cuda'):
         self.device = device

@@ -1,0 +1,3 @@
+from model import download_all_controlnet_weights
+
+download_all_controlnet_weights()

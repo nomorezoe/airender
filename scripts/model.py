@@ -40,7 +40,7 @@ def download_all_controlnet_weights() -> None:
 
 class Model:
     def __init__(self,
-                 base_model_id: str = 'runwayml/stable-diffusion-v1-5',
+                 base_model_id: str = 'models/deliberate_v3.safetensors',
                  task_name: str = 'Canny'):
         self.device = torch.device(
             'cuda:0' if torch.cuda.is_available() else 'mps:0')
@@ -55,15 +55,17 @@ class Model:
             return self.pipe
         model_id = CONTROLNET_MODEL_IDS[task_name]
         controlnet = ControlNetModel.from_pretrained(model_id,
-                                                     torch_dtype=torch.float32)
+                                                     torch_dtype=torch.float32,
+                                                     local_files_only=True)
         pipe = StableDiffusionControlNetPipeline.from_single_file(
-            "models/deliberate_v3.safetensors",
+            base_model_id,
             use_safetensors=True, 
             load_safety_checker=False,
             #safety_checker=None,
             controlnet=controlnet,
             local_files_only=True,
             torch_dtype=torch.float32)
+        #pipe.enable_vae_slicing() 
         #pipe.load_lora_weights("./models", weight_name="Drawing.safetensors")
 
         #pipe.unet.load_attn_procs("./models/CineStyle5.safetensors",local_files_only=True)
@@ -99,7 +101,8 @@ class Model:
         gc.collect()
         model_id = CONTROLNET_MODEL_IDS[task_name]
         controlnet = ControlNetModel.from_pretrained(model_id,
-                                                     torch_dtype=torch.float32)
+                                                     torch_dtype=torch.float32,
+                                                     local_files_only=True)
         controlnet.to(self.device)
         torch.cuda.empty_cache()
         gc.collect()

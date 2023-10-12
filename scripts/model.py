@@ -65,7 +65,7 @@ class Model:
             #safety_checker=None,
             controlnet=controlnet,
             local_files_only=True,
-            torch_dtype=torch.float32)
+            torch_dtype=torch.float16)
         #pipe.enable_vae_slicing() 
         #pipe.load_lora_weights("./models", weight_name="Drawing.safetensors")
 

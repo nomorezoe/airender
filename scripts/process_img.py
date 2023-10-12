@@ -49,6 +49,7 @@ pipeline = StableDiffusionInpaintPipeline.from_single_file(
             torch_dtype=torch.float32,
             load_safety_checker=False,
             local_files_only=True,
+            torch_dtype=torch.float16
         )
         #pipeline.load_lora_weights("./models", weight_name="Drawing.safetensors")
 

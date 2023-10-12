@@ -32,7 +32,7 @@ image = re[1]
 pipeline = StableDiffusionInpaintPipeline.from_single_file(
             "models/deliberate_v3-inpainting.safetensors",
             use_safetensors=True, 
-            torch_dtype=torch.float16 if start_device=="cuda" else torch.float32,
+            torch_dtype=torch.float16,
             load_safety_checker=False,
             local_files_only=True
         )

@@ -1,10 +1,6 @@
 from PIL import Image
 from contextlib import contextmanager
-from diffusers import DiffusionPipeline, StableDiffusionPipeline
-from transformers import AutoModel
 import torch
-from diffusers.pipelines.stable_diffusion import safety_checker
-import diffusers
 
 from adetailer.common import PredictOutput
 from adetailer.mask import filter_by_ratio, mask_preprocess, sort_bboxes
@@ -44,7 +40,7 @@ def change_torch_load():
         torch.load = orig
 
 
-def inpaint_it(pipeline, image, type):
+def inpaint_it(pipeline, image, type, device):
     predictor = ultralytics_predict
 
     ad_models = {
@@ -62,7 +58,7 @@ def inpaint_it(pipeline, image, type):
 #/Users/zoewang/Documents/renderbackend/ControlNet-v1-1/models/adetailer/face_yolov8n.pt
 
     with change_torch_load():
-        pred = predictor(ad_models[type], image, 0.3, 'cuda' if torch.cuda.is_available() else 'mps')
+        pred = predictor(ad_models[type], image, 0.3, device)
 
     bboxes=pred.bboxes
     #print('bboxes')

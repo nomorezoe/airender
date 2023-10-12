@@ -8,9 +8,7 @@ import torch
 from controlnet_aux.util import HWC3
 from diffusers import (ControlNetModel, DiffusionPipeline,
                        StableDiffusionControlNetPipeline,
-                       UniPCMultistepScheduler,
-                       DPMSolverMultistepScheduler,
-                       EulerAncestralDiscreteScheduler)
+                       DPMSolverMultistepScheduler)
 
 from cv_utils import resize_image
 from preprocessor import Preprocessor
@@ -41,10 +39,10 @@ def download_all_controlnet_weights() -> None:
 
 class Model:
     def __init__(self,
-                 base_model_id: str = 'models/deliberate_v3.safetensors',
-                 task_name: str = 'Canny'):
-        self.device = torch.device(
-            'cuda:0' if torch.cuda.is_available() else 'mps:0')
+                 base_model_id: str = 'models/deliberate_v2.safetensors',
+                 task_name: str = 'Canny',
+                 device: str = 'cuda'):
+        self.device = device
         self.base_model_id = ''
         self.task_name = ''
         self.pipe = self.load_pipe(base_model_id, task_name)
@@ -62,16 +60,15 @@ class Model:
             base_model_id,
             use_safetensors=True, 
             load_safety_checker=False,
-            #safety_checker=None,
             controlnet=controlnet,
             local_files_only=True,
-            torch_dtype=torch.float16)
+            torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
         #pipe.enable_vae_slicing() 
         #pipe.load_lora_weights("./models", weight_name="Drawing.safetensors")
 
         #pipe.unet.load_attn_procs("./models/CineStyle5.safetensors",local_files_only=True)
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(#UniPCMultistepScheduler.from_config(
-            pipe.scheduler.config, use_karras_sigmas=True,algorithm_type="dpmsolver++")
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+            pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
         if self.device.type == 'cuda':
             pipe.enable_xformers_memory_efficient_attention()
         pipe.to(self.device)

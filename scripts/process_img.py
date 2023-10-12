@@ -1,23 +1,17 @@
-from diffusers import DiffusionPipeline, StableDiffusionPipeline
-from transformers import AutoModel
 import torch
-from diffusers.pipelines.stable_diffusion import safety_checker
 from model import Model
 from PIL import Image
 import random
 from process_inpaint import inpaint_it
 from utils import randomize_seed_fn
 
-from diffusers import DiffusionPipeline, StableDiffusionPipeline
-from transformers import AutoModel
 import torch
-from diffusers.pipelines.stable_diffusion import safety_checker
-import diffusers
-from diffusers import StableDiffusionInpaintPipeline, StableDiffusionInpaintPipelineLegacy
+from diffusers import StableDiffusionInpaintPipeline
 import time
 
 start_time = time.time()  
-model = Model(task_name='depth')
+start_device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
+model = Model(task_name='depth',device=start_device)
 #model.set_base_model('SdValar/deliberate2')
 #model.set_base_model('stablediffusionapi/deliberate-v2')
 #demo = create_demo(model.process_depth)
@@ -36,28 +30,20 @@ print(f"time -1: {time.time() - start_time}")
 image = re[1]
 
 pipeline = StableDiffusionInpaintPipeline.from_single_file(
-            #'runwayml/stable-diffusion-inpainting',
-            #"CompVis/ldm-super-resolution-4x-openimages",
-            #"stablediffusionapi/deliberate-v2",
-            #"5w4n/deliberate-v2-inpainting",
-            #"Uminosachi/Deliberate-inpainting",
-            #"XpucT/Deliberate",
-            #"stabilityai/stable-diffusion-2-inpainting",
             "models/deliberate_v3-inpainting.safetensors",
-            #use_safetensors=True, 
-            safety_checker=None,
-            torch_dtype=torch.float16,
+            use_safetensors=True, 
+            torch_dtype=torch.float16 if start_device=="cuda" else torch.float32,
             load_safety_checker=False,
             local_files_only=True
         )
         #pipeline.load_lora_weights("./models", weight_name="Drawing.safetensors")
 
-pipeline.to('cuda' if torch.cuda.is_available() else 'mps')
+pipeline.to('cuda' if start_device=="cuda" else 'mps')
         #pipeline.scheduler = diffusers.EulerAncestralDiscreteScheduler.from_config(pipeline.scheduler.config)
         #pipeline.scheduler = diffusers.DDIMScheduler.from_config(pipeline.scheduler.config)
 
 print(f"time -3: {time.time() - start_time}")
-image = inpaint_it(pipeline, image,"face_yolov8n.pt")
-image = inpaint_it(pipeline, image,"hand_yolov8n.pt")
+image = inpaint_it(pipeline, image,"face_yolov8n.pt", start_device)
+image = inpaint_it(pipeline, image,"hand_yolov8n.pt", start_device)
 print(f"time -2: {time.time() - start_time}")
 image.save("test.png")

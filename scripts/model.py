@@ -41,10 +41,12 @@ class Model:
     def __init__(self,
                  base_model_id: str = 'models/deliberate_v3.safetensors',
                  task_name: str = 'Canny',
-                 device: str = 'cuda'):
+                 device: str = 'cuda',
+                 clip_skip: int = 1):
         self.device = device
         self.base_model_id = ''
         self.task_name = ''
+        self.clip_skip = clip_skip
         self.pipe = self.load_pipe(base_model_id, task_name)
         self.preprocessor = Preprocessor()
 
@@ -54,7 +56,7 @@ class Model:
             return self.pipe
         model_id = CONTROLNET_MODEL_IDS[task_name]
         controlnet = ControlNetModel.from_pretrained(model_id,
-                                                     torch_dtype=torch.float32,
+                                                     torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
                                                      local_files_only=True)
         pipe = StableDiffusionControlNetPipeline.from_single_file(
             base_model_id,
@@ -62,11 +64,9 @@ class Model:
             load_safety_checker=False,
             controlnet=controlnet,
             local_files_only=True,
+            clip_skip = self.clip_skip,
             torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
-        #pipe.enable_vae_slicing() 
-        #pipe.load_lora_weights("./models", weight_name="Drawing.safetensors")
-
-        #pipe.unet.load_attn_procs("./models/CineStyle5.safetensors",local_files_only=True)
+        #sampler
         pipe.scheduler = DPMSolverMultistepScheduler.from_config(
             pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
         if self.device.type == 'cuda':
@@ -99,7 +99,7 @@ class Model:
         gc.collect()
         model_id = CONTROLNET_MODEL_IDS[task_name]
         controlnet = ControlNetModel.from_pretrained(model_id,
-                                                     torch_dtype=torch.float32,
+                                                     torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
                                                      local_files_only=True)
         controlnet.to(self.device)
         torch.cuda.empty_cache()

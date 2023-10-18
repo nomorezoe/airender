@@ -264,10 +264,18 @@ def setup_pipeline(pipe, device, lora_id):
 
 
 def get_model_path(model_id):
+    if (model_id == "realisticVision"):
+        return "../models/realisticVisionV51_v51VAE.safetensors"
+    if (model_id == "revAnimated"):
+        return "../models/revAnimated_v121.safetensors"
     return "../models/"+model_id+".safetensors"
 
 
 def get_inpaint_model_path(model_id):
+    if (model_id == "realisticVision"):
+        return "../models/realisticVisionV51_v51VAE-inpainting.safetensors"
+    if (model_id == "revAnimated"):
+        return "../models/revAnimated_v121Inp-inpainting.safetensors"
     if (model_id == "deliberate_v2"):
         return "../models/deliberate_v3-inpainting.safetensors"
     return "../models/"+model_id+"-inpainting.safetensors"

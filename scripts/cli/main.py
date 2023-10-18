@@ -61,7 +61,7 @@ def get_inpaint_masks(image, type, device):
 
     ad_models = {
         "face_yolov8n.pt":
-        os.path.dirname(os.path.abspath(__file__)) +
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))) +
         '/../models/adetailer/face_yolov8n.pt',
         'face_yolov8s.pt':
         os.path.dirname(os.path.abspath(__file__)) +

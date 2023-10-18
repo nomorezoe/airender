@@ -58,7 +58,7 @@ def change_torch_load():
 
 def get_inpaint_masks(image, type, device):
     predictor = ultralytics_predict
-    print( os.path.dirname(os.path.abspath(__file__)) )
+    print(os.path.abspath(__file__))
     ad_models = {
         "face_yolov8n.pt":
         '/../models/adetailer/face_yolov8n.pt',

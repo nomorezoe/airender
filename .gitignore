@@ -164,4 +164,9 @@ cython_debug/
 
 scripts/models/ControlNet/
 *.safetensors
-/node_modules/
+server/node_modules/
+
+img_save/
+capture/
+output/
+./vscode/*

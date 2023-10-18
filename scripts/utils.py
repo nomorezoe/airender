@@ -1,5 +1,4 @@
 import random
-
 from settings import MAX_SEED
 
 

@@ -163,7 +163,9 @@ cython_debug/
 
 
 scripts/models/ControlNet/
-*.safetensors
+scripts/models/*.safetensors
+scripts/models/lora/*.safetensors
+scripts/models/vae/*.safetensors
 server/node_modules/
 
 img_save/

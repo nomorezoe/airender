@@ -58,21 +58,22 @@ def change_torch_load():
 
 def get_inpaint_masks(image, type, device):
     predictor = ultralytics_predict
-    print(os.path.abspath(__file__))
+    mydir = os.getcwd()
+    print(mydir)
     ad_models = {
         "face_yolov8n.pt":
-        '/../models/adetailer/face_yolov8n.pt',
+        mydir + '/../models/adetailer/face_yolov8n.pt',
         'face_yolov8s.pt':
-        os.path.dirname(os.path.abspath(__file__)) +
+        mydir +
         '/../models/adetailer/face_yolov8s.pt',
         'hand_yolov8n.pt':
-        os.path.dirname(os.path.abspath(__file__)) +
+        mydir +
         '/../models/adetailer/hand_yolov8n.pt',
         'person_yolov8n-seg.pt':
-        os.path.dirname(os.path.abspath(__file__)) +
+        mydir +
         '/../models/adetailer/person_yolov8n-seg.pt',
         'person_yolov8s-seg.pt':
-        os.path.dirname(os.path.abspath(__file__)) + '/../models/adetailer/person_yolov8s-seg.pt'}
+        mydir + '/../models/adetailer/person_yolov8s-seg.pt'}
 
     with change_torch_load():
         pred = predictor(ad_models[type], image, 0.3, device)

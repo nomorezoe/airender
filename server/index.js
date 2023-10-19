@@ -30,6 +30,44 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
+app.get('/test_env2', (req, res) => {
+    var exec =  require('child_process').exec;
+    var exestring = 'echo $PATH'
+
+    const python = exec(exestring);
+    // collect data from script
+    python.stdout.on('data', function (data) {
+        console.log(`data: ${data}`);
+    });
+    python.stderr.on('data', (data) => {
+        console.error(`data: ${data}`);
+      });
+
+    // in close event we are sure that stream from child process is closed
+    python.on('close', (code) => {
+    console.log(`child process close all stdio with code ${code}`);
+    });
+});
+
+app.get('/test_env3', (req, res) => {
+    var exec =  require('child_process').exec;
+    var exestring = 'python3 --version'
+
+    const python = exec(exestring);
+    // collect data from script
+    python.stdout.on('data', function (data) {
+        console.log(`data: ${data}`);
+    });
+    python.stderr.on('data', (data) => {
+        console.error(`data: ${data}`);
+      });
+
+    // in close event we are sure that stream from child process is closed
+    python.on('close', (code) => {
+    console.log(`child process close all stdio with code ${code}`);
+    });
+});
+
 app.get('/test_env', (req, res) => {
     var exec =  require('child_process').exec;
     var exestring = 'which python3'

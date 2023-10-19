@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
 
 app.get('/test_env', (req, res) => {
     var exec =  require('child_process').exec;
-    var exestring = 'python3 --version'
+    var exestring = 'echo $PATH'
 
     const python = exec(exestring);
     // collect data from script

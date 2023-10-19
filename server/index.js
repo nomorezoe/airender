@@ -116,7 +116,7 @@ app.post('/render', (req, res) => {
             //var prompt = "a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks.";
 
             var exec =  require('child_process').exec;
-            var exestring = 'python3 ../scripts/cli/main.py -n 1 -c ' + cfg + 
+            var exestring = 'python3.11 ../scripts/cli/main.py -n 1 -c ' + cfg + 
             ' -i ' + imgname + 
             ' -m ' + model +
             ' -cs ' + clipskip +

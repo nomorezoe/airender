@@ -8,7 +8,7 @@ const { v4: uuidv4 } = require('uuid');
 //const { join } = require('path');
 const cors = require('cors');
 
-var IPWorkingRecords = {};
+var renderRecords = {};
 
 app.use(
     fileUpload({
@@ -98,6 +98,7 @@ app.post('/render', (req, res) => {
     var prompt = req.body.prompt;
 
     var ip = req.body.ip;
+    renderRecords[ip] = 0;
 
     var rawImg = req.files.imageByteArray.data
     //base64Data = rawImg.replace(/^data:image\/png;base64,/, ''),
@@ -139,7 +140,11 @@ app.post('/render', (req, res) => {
             python.on('close', (code) => {
             console.log(`child process close all stdio with code ${code}`);
             // send data to browser
-            res.send(imgname);
+            res.json({ 
+                success: code == 0, 
+                code : code,
+                data: imgname, 
+              }); 
             })
         }
         else{

@@ -1,5 +1,4 @@
 # ,ControlNetModel，StableDiffusionControlNetInpaintPipeline
-from diffusers import AutoencoderKL, StableDiffusionInpaintPipeline
 
 import os
 import sys
@@ -7,30 +6,32 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
+from contextlib import contextmanager
+from PIL.PngImagePlugin import PngInfo
+from PIL import Image
+from model import Model
+from utils import randomize_seed_fn
+from adetailer.common import PredictOutput
+from adetailer.mask import filter_by_ratio, mask_preprocess, sort_bboxes
+from adetailer import ultralytics_predict
+import masking
+import torch
+import time
+import numpy as np
+import cv2
+import images
+import argparse
+from diffusers import AutoencoderKL, StableDiffusionInpaintPipeline
+
 
 # from controlnet_aux import OpenposeDetector
-import argparse
-import images
-import cv2
-import numpy as np
-import time
-import torch
-import masking
-from adetailer import ultralytics_predict
-from adetailer.mask import filter_by_ratio, mask_preprocess, sort_bboxes
-from adetailer.common import PredictOutput
-from utils import randomize_seed_fn
-from model import Model
-from PIL import Image
-from PIL.PngImagePlugin import PngInfo
-from contextlib import contextmanager
+
+def controlnet_progress(step, timestep, latents):
+    print("controlnet_progress:" + str(step), flush=True)
 
 
-
-
-def progress(step, timestep, latents):
-    print(step, timestep, latents[0][0][0][0], flush=False)
-
+def inpaint_progress(step, timestep, latents):
+    print("inpaint_progress:" + str(step), flush=True)
 
 def pred_preprocessing(pred: PredictOutput):
     pred = filter_by_ratio(
@@ -59,7 +60,6 @@ def change_torch_load():
 def get_inpaint_masks(image, type, device):
     predictor = ultralytics_predict
     mydir = os.getcwd()
-    print(mydir)
     ad_models = {
         "face_yolov8n.pt":
         mydir + '/../models/adetailer/face_yolov8n.pt',
@@ -83,43 +83,41 @@ def get_inpaint_masks(image, type, device):
     return masks
 
 
-def inpaint_all(image, masks, pipeline, prompt, n_prompt):
+def inpaint(image, mask, pipeline, prompt, n_prompt):
+    mask_image = mask
 
-    for mask in masks:
-        mask_image = mask
+    mask_blur = 4
+    np_mask = np.array(mask_image)
+    kernel_size = 2 * int(4 * 4 + 0.5) + 1
+    np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), mask_blur)
+    np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), mask_blur)
+    mask_image = Image.fromarray(np_mask)
 
-        mask_blur = 4
-        np_mask = np.array(mask_image)
-        kernel_size = 2 * int(4 * 4 + 0.5) + 1
-        np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), mask_blur)
-        np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), mask_blur)
-        mask_image = Image.fromarray(np_mask)
+    inpaint_full_res_padding = 32
+    mask_image = mask_image.convert('L')
+    crop_region = masking.get_crop_region(
+        np.array(mask_image), inpaint_full_res_padding)
+    crop_region = masking.expand_crop_region(
+        crop_region, 512, 512, mask_image.width, mask_image.height)
 
-        inpaint_full_res_padding = 32
-        mask_image = mask_image.convert('L')
-        crop_region = masking.get_crop_region(
-            np.array(mask_image), inpaint_full_res_padding)
-        crop_region = masking.expand_crop_region(
-            crop_region, 840, 560, mask_image.width, mask_image.height)
+    init_image = image.crop(crop_region)
+    mask_image = mask_image.crop(crop_region)
 
-        init_image = image.crop(crop_region)
-        mask_image = mask_image.crop(crop_region)
+    original_w = init_image.width
+    original_h = init_image.height
 
-        original_w = init_image.width
-        original_h = init_image.height
+    init_image = images.resize_image(2, init_image, 512, 512)
+    mask_image = images.resize_image(2, mask_image, 512, 512)
 
-        init_image = images.resize_image(2, init_image, 840, 560)
-        mask_image = images.resize_image(2, mask_image, 840, 560)
+    # init_image.show()
+    # mask_image.show()
+    result = pipeline(prompt=prompt, width=512, height=512, negative_prompt=n_prompt, image=init_image,
+                        strength=0.4, mask_image=mask_image,  num_inference_steps=28, callback=inpaint_progress).images[0]
+    # result.show()
+    result = images.resize_image(1, result, original_w, original_h)
 
-        # init_image.show()
-        # mask_image.show()
-        result = pipeline(prompt=prompt, width=840, height=560, negative_prompt=n_prompt, image=init_image,
-                          strength=0.4, mask_image=mask_image,  num_inference_steps=28, callback=progress).images[0]
-        # result.show()
-        result = images.resize_image(1, result, original_w, original_h)
-
-        image.paste(result, crop_region)
-        # return image
+    image.paste(result, crop_region)
+    # return image
     return image
 
 
@@ -186,7 +184,7 @@ def start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt
 '''
 
 
-def start_inpaint_pipeline(image, device, prompt, n_prompt, model_id, lora_id, clip_skip):
+def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip):
     # inpaint pipo
     pipeline = StableDiffusionInpaintPipeline.from_single_file(
         get_inpaint_model_path(model_id),
@@ -205,15 +203,21 @@ def start_inpaint_pipeline(image, device, prompt, n_prompt, model_id, lora_id, c
     # masks2 = [masks2[0]]
     # image = inpaint_all(image, masks2, pipeline, "a chic Caucasian kid", n_prompt)
     # image.save("test_inpaint_person.png")
-
-    masks = get_inpaint_masks(image, "face_yolov8n.pt", device)
-    image = inpaint_all(image, masks, pipeline, prompt, n_prompt)
+    n = batch_count
+    for i in range(0, n):
+        print("inpaint_start:" + str(i), flush=True)
+        masks = get_inpaint_masks(images[i], "face_yolov8n.pt", device)
+        j = 0
+        for mask in masks:
+            print("inpaint_mask_start:" + str(j) + ":"+  str(len(masks)), flush=True)
+            j = j + 1
+            images[i] = inpaint(images[i], mask, pipeline, prompt, n_prompt)
 
     # image = inpaint_it(pipeline, image, "hand_yolov8n.pt", device)
-    return image
+    return images
 
 
-def start_controlnet_pipeline(image, device, prompt, n_prompt, model_id, lora_id, cfg, clip_skip, sampler_steps):
+def start_controlnet_pipeline(image, batch_count, device, prompt, n_prompt, model_id, lora_id, cfg, clip_skip, sampler_steps):
     model = Model(task_name='depth', device=device,
                   base_model_id=get_model_path(model_id),
                   clip_skip=clip_skip)
@@ -224,10 +228,17 @@ def start_controlnet_pipeline(image, device, prompt, n_prompt, model_id, lora_id
     # model.set_base_model('stablediffusionapi/deliberate-v2')
     # demo = create_demo(model.process_depth)
 
-    image_results = model.process_depth(image, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=840, preprocess_resolution=512,
-                                        num_steps=sampler_steps, guidance_scale=cfg, seed=randomize_seed_fn(seed=0, randomize_seed=True), preprocessor_name='Midas', callback=progress)
+    imageresults = []
+    n = batch_count
+    #print('start_controlnet_pipeline'+ str(n))
+    for i in range(0, n):
+        print("controlnet_start:" + str(i), flush=True)
+        result = model.process_depth(image, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=840, preprocess_resolution=512,
+                                     num_steps=sampler_steps, guidance_scale=cfg, seed=randomize_seed_fn(seed=0, randomize_seed=True), preprocessor_name='Midas', callback=controlnet_progress)
+        imageresults= [result[1]] + imageresults
+        #print("imageresults" + str(len(imageresults)))
 
-    return image_results[1]
+    return imageresults
 
 
 def setup_pipeline(pipe, device, lora_id):
@@ -241,7 +252,7 @@ def setup_pipeline(pipe, device, lora_id):
                                          use_safetensors=True,
                                          torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
     vae.to('cuda' if device.type == 'cuda' else 'mps')
-    #pipe.vae = vae
+    # pipe.vae = vae
 
     # negative embedding
     pipe.load_textual_inversion("../models/negative_embeddings/bad_prompt_version2.pt",
@@ -287,8 +298,8 @@ def get_lora(lora_id):
     return lora_id+".safetensors"
 
 
-def main(image_id, prompt, model_id, lora_id, cfg, clip_skip, sampler_steps):
-
+def main(image_id, batch_count, prompt, model_id, lora_id, cfg, clip_skip, sampler_steps):
+   
     # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
     n_prompt = "bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
 
@@ -296,33 +307,36 @@ def main(image_id, prompt, model_id, lora_id, cfg, clip_skip, sampler_steps):
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     image = Image.open("../../capture/" + image_id + ".png")
 
-    image = start_controlnet_pipeline(
-        image, device, prompt, n_prompt, model_id, lora_id, cfg, clip_skip, sampler_steps)
+    results = start_controlnet_pipeline(
+        image, batch_count, device, prompt, n_prompt, model_id, lora_id, cfg, clip_skip, sampler_steps)
 
     # controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11p_sd15_openpose",
     #                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
     #                                                 local_files_only=True)
 
+    images = results
     # image.save("test_before.png")
     # image = start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt)
     # image.save("test_inpaint.png")
 
-    image = start_inpaint_pipeline(
-        image, device, prompt, n_prompt, model_id, lora_id, clip_skip)
+    images = start_inpaint_pipeline(
+        images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip)
     print(f"time -2: {time.time() - start_time}")
 
-    meta = PngInfo()
-    meta.add_text("prompt", prompt)
-    meta.add_text("nprompt", n_prompt)
-    meta.add_text("model", get_model_path(model_id))
-    meta.add_text("in paintmodel", get_inpaint_model_path(model_id))
-    meta.add_text("lora", get_lora(lora_id))
-    meta.add_text("cfg", str(cfg))
-    meta.add_text("clip skip", str(clip_skip))
-    meta.add_text("sampler steps", str(sampler_steps))
-
-    image.save("../../output/" + image_id +
-               ".png", format="PNG", pnginfo=meta)
+    n = batch_count
+    for i in range(0, n):
+        meta = PngInfo()
+        meta.add_text("prompt", prompt)
+        meta.add_text("nprompt", n_prompt)
+        meta.add_text("model", get_model_path(model_id))
+        meta.add_text("in paintmodel", get_inpaint_model_path(model_id))
+        meta.add_text("lora", get_lora(lora_id))
+        meta.add_text("cfg", str(cfg))
+        meta.add_text("clip skip", str(clip_skip))
+        meta.add_text("sampler steps", str(sampler_steps))
+        print("image_save: " + str(i))
+        images[i].save("../../output/" + image_id + "_"+ str(i) +
+                       ".png", format="PNG", pnginfo=meta)
 
 
 def parse_args():
@@ -337,6 +351,7 @@ def parse_args():
     parser.add_argument('--sampler_step', '-ss',
                         type=int, help="sampler steps")
     parser.add_argument('--lora', '-l', type=str, help="lora id")
+    parser.add_argument('--batch_count', '-b', type=int, help = "batch count", default = 1)
     return parser.parse_args()
 
 
@@ -347,14 +362,15 @@ if __name__ == "__main__":
     print('arg_prompt: ' + args.prompt)
     print('arg_model_id: ' + args.model)
     print('lora_id: ' + args.lora)
-    print('cfg: ' +  str(args.cfg))
-    print('clip_skip: ' +  str(args.clipskip))
+    print('cfg: ' + str(args.cfg))
+    print('clip_skip: ' + str(args.clipskip))
     print('sampler_steps: ' + str(args.sampler_step))
+    print('batch_count:  '+ str(args.batch_count))
 
     if (args.node == 1):
         mydir = os.getcwd()
         mydir_tmp = mydir + "/../scripts/cli"
         mydir_new = os.chdir(mydir_tmp)
 
-    main(args.image, args.prompt, args.model, args.lora,
+    main(args.image, args.batch_count, args.prompt, args.model, args.lora,
          args.cfg, args.clipskip, args.sampler_step)

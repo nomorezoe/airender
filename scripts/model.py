@@ -8,7 +8,10 @@ import torch
 from controlnet_aux.util import HWC3
 from diffusers import (ControlNetModel, DiffusionPipeline,
                        StableDiffusionControlNetPipeline,
-                       DPMSolverMultistepScheduler)
+                       DPMSolverMultistepScheduler,
+                       DPMSolverSinglestepScheduler,
+                       EulerAncestralDiscreteScheduler,
+                       DPMSolverSDEScheduler)
 
 from cv_utils import resize_image
 from preprocessor import Preprocessor
@@ -16,7 +19,7 @@ from settings import MAX_IMAGE_RESOLUTION, MAX_NUM_IMAGES
 
 CONTROLNET_MODEL_IDS = {
     'Openpose': 'lllyasviel/control_v11p_sd15_openpose',
-    'Canny': 'lllyasviel/control_v11p_sd15_canny',
+    'canny': 'lllyasviel/control_v11p_sd15_canny',
     'MLSD': 'lllyasviel/control_v11p_sd15_mlsd',
     'scribble': 'lllyasviel/control_v11p_sd15_scribble',
     'softedge': 'lllyasviel/control_v11p_sd15_softedge',
@@ -44,15 +47,17 @@ class Model:
                  base_model_id: str = 'models/deliberate_v3.safetensors',
                  task_name: str = 'Canny',
                  device: str = 'cuda',
+                 scheduler_type: str = "DPM2M++K",
                  clip_skip: int = 1):
         self.device = device
         self.base_model_id = ''
         self.task_name = ''
+        self.scheduler_type = scheduler_type
         self.clip_skip = clip_skip
-        self.pipe = self.load_pipe(base_model_id, task_name)
+        self.pipe = self.load_pipe(base_model_id, task_name, scheduler_type)
         self.preprocessor = Preprocessor()
 
-    def load_pipe(self, base_model_id: str, task_name) -> DiffusionPipeline:
+    def load_pipe(self, base_model_id: str, task_name, scheduler_type) -> DiffusionPipeline:
         if base_model_id == self.base_model_id and task_name == self.task_name and hasattr(
                 self, 'pipe') and self.pipe is not None:
             return self.pipe
@@ -69,8 +74,16 @@ class Model:
             clip_skip = self.clip_skip,
             torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
         #sampler
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
-            pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+        if(scheduler_type == "DPM++2MK"):
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+        elif(scheduler_type == "DPM++2SK"):
+            pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+        elif(scheduler_type == "DPM++SDEK"):
+            pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+        else:
+            pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+
+
         if self.device.type == 'cuda':
             pipe.enable_xformers_memory_efficient_attention()
         pipe.to(self.device)

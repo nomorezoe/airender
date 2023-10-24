@@ -83,7 +83,7 @@ def get_inpaint_masks(image, type, device):
     return masks
 
 
-def inpaint(image, mask, pipeline, prompt, n_prompt):
+def inpaint(image, mask, pipeline, prompt, n_prompt, inpaint_strength):
     mask_image = mask
 
     mask_blur = 4
@@ -112,7 +112,7 @@ def inpaint(image, mask, pipeline, prompt, n_prompt):
     # init_image.show()
     # mask_image.show()
     result = pipeline(prompt=prompt, width=512, height=512, negative_prompt=n_prompt, image=init_image,
-                        strength=0.4, mask_image=mask_image,  num_inference_steps=28, callback=inpaint_progress).images[0]
+                        strength=inpaint_strength, mask_image=mask_image,  num_inference_steps=28, callback=inpaint_progress).images[0]
     # result.show()
     result = images.resize_image(1, result, original_w, original_h)
 
@@ -184,7 +184,7 @@ def start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt
 '''
 
 
-def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip):
+def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength):
     # inpaint pipo
     pipeline = StableDiffusionInpaintPipeline.from_single_file(
         get_inpaint_model_path(model_id),
@@ -196,7 +196,7 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
     )
 
     pipeline.to('cuda' if device.type == 'cuda' else 'mps')
-    setup_pipeline(pipeline, device, lora_id)
+    setup_pipeline(pipeline, device, lora_id, vae)
 
     # masks2 = get_inpaint_masks(image, "person_yolov8n-seg.pt", 'cuda' if device.type == 'cuda' else 'cpu')
     # print(masks2)
@@ -211,18 +211,19 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
         for mask in masks:
             print("inpaint_mask_start:" + str(j) + ":"+  str(len(masks)), flush=True)
             j = j + 1
-            images[i] = inpaint(images[i], mask, pipeline, prompt, n_prompt)
+            images[i] = inpaint(images[i], mask, pipeline, prompt, n_prompt, inpaint_strength)
 
     # image = inpaint_it(pipeline, image, "hand_yolov8n.pt", device)
     return images
 
 
-def start_controlnet_pipeline(image, batch_count, device, prompt, n_prompt, model_id, lora_id, cfg, clip_skip, sampler_steps):
-    model = Model(task_name='depth', device=device,
+def start_controlnet_pipeline(image, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae):
+    model = Model(task_name = control_net_model, device=device,
                   base_model_id=get_model_path(model_id),
+                  scheduler_type = scheduler_type,
                   clip_skip=clip_skip)
 
-    setup_pipeline(model.pipe, device, lora_id)
+    setup_pipeline(model.pipe, device, lora_id, vae)
 
     # model.set_base_model('SdValar/deliberate2')
     # model.set_base_model('stablediffusionapi/deliberate-v2')
@@ -241,18 +242,19 @@ def start_controlnet_pipeline(image, batch_count, device, prompt, n_prompt, mode
     return imageresults
 
 
-def setup_pipeline(pipe, device, lora_id):
+def setup_pipeline(pipe, device, lora_id, vae):
     # lora
     if (lora_id != "None"):
         pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id))
 
     # vae
-    vae = AutoencoderKL.from_single_file("../models/vae/vae-ft-mse-840000-ema-pruned.safetensors",
+    if(vae):
+        vae = AutoencoderKL.from_single_file("../models/vae/vae-ft-mse-840000-ema-pruned.safetensors",
                                          local_files_only=True,
                                          use_safetensors=True,
                                          torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
-    vae.to('cuda' if device.type == 'cuda' else 'mps')
-    # pipe.vae = vae
+        vae.to('cuda' if device.type == 'cuda' else 'mps')
+        pipe.vae = vae
 
     # negative embedding
     pipe.load_textual_inversion("../models/negative_embeddings/bad_prompt_version2.pt",
@@ -298,7 +300,7 @@ def get_lora(lora_id):
     return lora_id+".safetensors"
 
 
-def main(image_id, batch_count, prompt, model_id, lora_id, cfg, clip_skip, sampler_steps):
+def main(image_id, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):
    
     # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
     n_prompt = "bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
@@ -308,7 +310,7 @@ def main(image_id, batch_count, prompt, model_id, lora_id, cfg, clip_skip, sampl
     image = Image.open("../../capture/" + image_id + ".png")
 
     results = start_controlnet_pipeline(
-        image, batch_count, device, prompt, n_prompt, model_id, lora_id, cfg, clip_skip, sampler_steps)
+        image, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae)
 
     # controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11p_sd15_openpose",
     #                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
@@ -320,7 +322,7 @@ def main(image_id, batch_count, prompt, model_id, lora_id, cfg, clip_skip, sampl
     # image.save("test_inpaint.png")
 
     images = start_inpaint_pipeline(
-        images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip)
+        images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength)
     print(f"time -2: {time.time() - start_time}")
 
     n = batch_count
@@ -352,6 +354,11 @@ def parse_args():
                         type=int, help="sampler steps")
     parser.add_argument('--lora', '-l', type=str, help="lora id")
     parser.add_argument('--batch_count', '-b', type=int, help = "batch count", default = 1)
+
+    parser.add_argument('--vae','-v', type=bool, default=True, help="if use vae")
+    parser.add_argument('--control_net_model','-cnm', type=str, default="depth", help="control net model")
+    parser.add_argument('--scheduler','-s', type=str, help="scheduler")
+    parser.add_argument('--inpaint_strength','-is', type=float, default=0.4, help="inpaint strength")
     return parser.parse_args()
 
 
@@ -361,16 +368,26 @@ if __name__ == "__main__":
     print('arg_image_id: ' + args.image)
     print('arg_prompt: ' + args.prompt)
     print('arg_model_id: ' + args.model)
-    print('lora_id: ' + args.lora)
     print('cfg: ' + str(args.cfg))
     print('clip_skip: ' + str(args.clipskip))
     print('sampler_steps: ' + str(args.sampler_step))
+    print('lora_id: ' + args.lora)
     print('batch_count:  '+ str(args.batch_count))
 
+    print ('vae: ' + str(args.vae))
+    print ('control_net_model: ' + str(args.control_net_model))
+    # canny, depth, scribble
+    print ('scheduler: ' + str(args.scheduler))
+    # DPM++2MK, DPM++2SK, DPM++SDEK, EULARA
+    print ('inpaint_strength: ' + str(args.inpaint_strength))
+
+    #eular
+    #DPM++ 2M Karras
+    #DPM++ SDE Karras
     if (args.node == 1):
         mydir = os.getcwd()
         mydir_tmp = mydir + "/../scripts/cli"
         mydir_new = os.chdir(mydir_tmp)
 
-    main(args.image, args.batch_count, args.prompt, args.model, args.lora,
-         args.cfg, args.clipskip, args.sampler_step)
+    main(args.image, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
+         args.cfg, args.clipskip, args.sampler_step, args.vae, args.inpaint_strength)

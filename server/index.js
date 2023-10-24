@@ -122,6 +122,12 @@ app.post('/render', (req, res) => {
     var lora = req.body.lora;
     var prompt = req.body.prompt;
 
+    var vae = req.body.vae == 1;
+    var sampleSteps = req.body.sampleSteps;
+    var scheduler = req.body.scheduler;
+    var inpaintStrength = req.body.inpaintStrength
+    var controlnetModlel= req.body.controlnetModlel
+
     var session = req.body.session;
     renderRecords[session] = 0;
 
@@ -140,7 +146,7 @@ app.post('/render', (req, res) => {
     var currentMask = 0;
     var totalMask = 0;
 
-    var sampleSteps = 25;
+    //var sampleSteps = 25;
 
     var buffer = Buffer.from(rawImg, "base64");
 
@@ -159,7 +165,12 @@ app.post('/render', (req, res) => {
                 ' -ss ' + sampleSteps +
                 ' -l ' + lora +
                 ' -b ' + batchcount +
+                ' -v ' + vae +
+                ' -s ' + scheduler +
+                ' -is ' + inpaintStrength +
+                ' -cnm ' + controlnetModlel +
                 ' -p "' + prompt + '"';
+
             console.log(exestring);
             const python = exec(exestring);
             // collect data from script

@@ -185,8 +185,23 @@ def start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt
 
 
 def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength):
-    # inpaint pipo
-    pipeline = StableDiffusionInpaintPipeline.from_single_file(
+    # inpaint pipe
+    if model_id == "deliberate_v2":
+        #print("deliberate_v2")
+        pipeline = StableDiffusionInpaintPipeline.from_pretrained(
+        #get_inpaint_model_path(model_id),
+        "5w4n/deliberate-v2-inpainting",
+        #use_safetensors=True,
+        torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+        safety_checker=None,
+        #load_safety_checker=False,
+        #local_files_only=True,
+        clip_skip=clip_skip
+    )
+    
+    else:
+        #print("none deliberate_v2")
+        pipeline = StableDiffusionInpaintPipeline.from_single_file(
         get_inpaint_model_path(model_id),
         use_safetensors=True,
         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
@@ -234,8 +249,9 @@ def start_controlnet_pipeline(image, batch_count, device, prompt, n_prompt, cont
     #print('start_controlnet_pipeline'+ str(n))
     for i in range(0, n):
         print("controlnet_start:" + str(i), flush=True)
-        result = model.process_depth(image, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=840, preprocess_resolution=512,
+        result = model.process_depth(image, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=840, preprocess_resolution=840,
                                      num_steps=sampler_steps, guidance_scale=cfg, seed=randomize_seed_fn(seed=0, randomize_seed=True), preprocessor_name='Midas', callback=controlnet_progress)
+        result[0].save("../../output/temp_depth.png")
         imageresults= [result[1]] + imageresults
         #print("imageresults" + str(len(imageresults)))
 
@@ -245,7 +261,7 @@ def start_controlnet_pipeline(image, batch_count, device, prompt, n_prompt, cont
 def setup_pipeline(pipe, device, lora_id, vae):
     # lora
     if (lora_id != "None"):
-        pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id))
+        pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id),local_files_only=True)
 
     # vae
     if(vae):
@@ -303,7 +319,8 @@ def get_lora(lora_id):
 def main(image_id, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):
    
     # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
-    n_prompt = "bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
+    n_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck,"
+    n_prompt = n_prompt + " bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
 
     start_time = time.time()
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')

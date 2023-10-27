@@ -8,11 +8,15 @@ from cv_utils import resize_image
 
 class DepthEstimator:
     def __init__(self):
-        self.model = pipeline('depth-estimation')
+        self.model = pipeline('depth-estimation',"Intel/dpt-large")
 
     def __call__(self, image: np.ndarray, **kwargs) -> PIL.Image.Image:
         detect_resolution = kwargs.pop('detect_resolution', 512)
         image_resolution = kwargs.pop('image_resolution', 512)
+
+        print("detect_resolution:" + str(detect_resolution))
+        print("image_resolution:" + str(image_resolution))
+
         image = np.array(image)
         image = HWC3(image)
         image = resize_image(image, resolution=detect_resolution)

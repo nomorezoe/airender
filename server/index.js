@@ -23,7 +23,7 @@ app.use(
 
 app.use(bodyParser.urlencoded({
     extended: true
-  }));
+}));
 
 app.use(cors({
     origin: '*'
@@ -126,22 +126,27 @@ app.post('/render', (req, res) => {
     var sampleSteps = req.body.sampleSteps;
     var scheduler = req.body.scheduler;
     var inpaintStrength = req.body.inpaintStrength
-    var controlnetModlel= req.body.controlnetModlel
+    var controlnetModlel = req.body.controlnetModlel
 
     var session = req.body.session;
     renderRecords[session] = 0;
 
     //console.log("session====" + session);
 
-    var rawImg = req.files.imageByteArray.data
+    var rawImg = req.files.imageByteArray.data;
     //base64Data = rawImg.replace(/^data:image\/png;base64,/, ''),
-    dirpath = __dirname + '/../capture/';
-    imgname = uuidv4();
-    imageFileName = imgname + '.png',
-        imageLocation = dirpath + imageFileName;
+    var dirpath = __dirname + '/../capture/';
+    var imgname = uuidv4();
+    var imageFileName = imgname + '.png';
+    var imageLocation = dirpath + imageFileName;
+
+    var rawImgGrid = req.files.gridImageByteArray.data;
+    var imageGridFileName = imgname + '_grid.png';
+    var imageGridLocation = dirpath + imageGridFileName;
 
     var batchcount = 4;
     var progress = 0;
+
     var currentImage = 0;
     var currentMask = 0;
     var totalMask = 0;
@@ -149,78 +154,105 @@ app.post('/render', (req, res) => {
     //var sampleSteps = 25;
 
     var buffer = Buffer.from(rawImg, "base64");
-
-    fs.writeFile(imageLocation, buffer, { flag: "w" }, function (err) {
+    var bufferGrid = Buffer.from(rawImgGrid, "base64");
+    fs.writeFile(imageGridLocation, bufferGrid, { flag: "w" }, function (err) {
         if (err == null) {
-            console.log("Start python");
-            var dataToSend;
-            // spawn new child process to call the python script
-            //var prompt = "a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks.";
+            progress = 2
+            renderRecords[session] = progress;
+            fs.writeFile(imageLocation, buffer, { flag: "w" }, function (err) {
+                progress = 4
+                renderRecords[session] = progress;
+                if (err == null) {
+                    console.log("Start python");
+                    var dataToSend;
+                    // spawn new child process to call the python script
+                    //var prompt = "a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks.";
 
-            var exec = require('child_process').exec;
-            var exestring = 'python3.11 ../scripts/cli/main.py -n 1 -c ' + cfg +
-                ' -i ' + imgname +
-                ' -m ' + model +
-                ' -cs ' + clipskip +
-                ' -ss ' + sampleSteps +
-                ' -l ' + lora +
-                ' -b ' + batchcount +
-                ' -v ' + vae +
-                ' -s ' + scheduler +
-                ' -is ' + inpaintStrength +
-                ' -cnm ' + controlnetModlel +
-                ' -p "' + prompt + '"';
+                    
+                    var exec = require('child_process').exec;
+                    var exestring = 'python3.11 ../scripts/cli/main.py -n 1 -c ' + cfg +
+                        ' -i ' + imgname +
+                        ' -m ' + model +
+                        ' -cs ' + clipskip +
+                        ' -ss ' + sampleSteps +
+                        ' -l ' + lora +
+                        ' -b ' + batchcount +
+                        ' -v ' + vae +
+                        ' -s ' + scheduler +
+                        ' -is ' + inpaintStrength +
+                        ' -cnm ' + controlnetModlel +
+                        ' -p "' + prompt + '"';
 
-            console.log(exestring);
-            const python = exec(exestring);
-            // collect data from script
-            python.stdout.on('data', function (data) {
-                console.log('Pipe data from python script ...' + data.toString());
+                    console.log(exestring);
+                    const python = exec(exestring);
+                    // collect data from script
+                    python.stdout.on('data', function (data) {
+                        if(progress < 10){
+                            progress = 10;
+                            renderRecords[session] = progress;
+                        }
+                        console.log('Pipe data from python script ...' + data.toString());
+                        if (data.startsWith("controlnet_progress")) {
+                            var p = parseInt(data.split(":")[1]);
+                            progress = 10 + 60 * (currentImage / batchcount + (p / sampleSteps) / batchcount);
+                            renderRecords[session] = progress;
+                            //console.log("[progress 1]:" + progress);
+                        }
+                        else if (data.startsWith("controlnet_start")) {
+                            currentImage = parseInt(data.split(":")[1]);
+                            //console.log("currentImage 2 :" + currentImage);
+                        }
+                        else if (data.startsWith("inpaint_progress")) {
+                            var p = parseInt(data.split(":")[1]);
+                            progress = 70 + 50 * (currentImage / batchcount + (p / 11) / totalMask / batchcount + currentMask / totalMask / batchcount);
+                            //console.log("[progress 2]:" + progress);
+                            renderRecords[session] = progress;
+                        }
+                        else if (data.startsWith("inpaint_start")) {
+                            currentImage = parseInt(data.split(":")[1]);
+                            //console.log("currentImage :" + currentImage);
+                        }
+                        else if (data.startsWith("inpaint_mask_start")) {
+                            totalMask = parseInt(data.split(":")[2]);
+                            currentMask = parseInt(data.split(":")[1]);
+                            //console.log("totalMask" + totalMask + "currentMask" + currentMask);
+                        }
 
-                if (data.startsWith("controlnet_progress")) {
-                    var p = parseInt(data.split(":")[1]);
-                    progress = 50 * (currentImage / batchcount + (p / sampleSteps) / batchcount);
-                    renderRecords[session] = progress;
-                    //console.log("[progress 1]:" + progress);
-                }
-                else if (data.startsWith("controlnet_start")) {
-                    currentImage = parseInt(data.split(":")[1]);
-                    //console.log("currentImage 2 :" + currentImage);
-                }
-                else if (data.startsWith("inpaint_progress")) {
-                    var p = parseInt(data.split(":")[1]);
-                    progress = 50 + 50 * (currentImage / batchcount + (p / 11) / totalMask / batchcount + currentMask / totalMask / batchcount);
-                    //console.log("[progress 2]:" + progress);
-                    renderRecords[session] = progress;
-                }
-                else if (data.startsWith("inpaint_start")) {
-                    currentImage = parseInt(data.split(":")[1]);
-                    //console.log("currentImage :" + currentImage);
-                }
-                else if (data.startsWith("inpaint_mask_start")) {
-                    totalMask = parseInt(data.split(":")[2]);
-                    currentMask = parseInt(data.split(":")[1]);
-                    //console.log("totalMask" + totalMask + "currentMask" + currentMask);
-                }
+                    });
+                    python.stderr.on('data', (data) => {
+                        console.error(`data: ${data}`);
+                    });
 
+                    // in close event we are sure that stream from child process is closed
+                    python.on('close', (code) => {
+                        console.log(`child process close all stdio with code ${code}`);
+                        // send data to browser
+                        res.json({
+                            success: code == 0,
+                            code: code,
+                            data: imgname,
+                        });
+                    })
+                }
+                else {
+                    console.log("err" + err);
+
+                    res.json({
+                        success: false,
+                        code: 100,
+                        data: "image save failed",
+                    });
+                }
             });
-            python.stderr.on('data', (data) => {
-                console.error(`data: ${data}`);
-            });
-
-            // in close event we are sure that stream from child process is closed
-            python.on('close', (code) => {
-                console.log(`child process close all stdio with code ${code}`);
-                // send data to browser
-                res.json({
-                    success: code == 0,
-                    code: code,
-                    data: imgname,
-                });
-            })
         }
         else {
             console.log("err" + err);
+
+            res.json({
+                success: false,
+                code: 101,
+                data: "grid image save failed",
+            });
         }
     });
 

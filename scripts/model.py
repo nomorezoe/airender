@@ -478,6 +478,7 @@ class Model:
     def process_depth(
         self,
         image: np.ndarray,
+        depthImage: np.ndarray,
         prompt: str,
         additional_prompt: str,
         negative_prompt: str,
@@ -498,13 +499,14 @@ class Model:
             raise ValueError
 
         if preprocessor_name == 'None':
-            image = HWC3(image)
+            #image = np.array(image)
+            image = HWC3(depthImage)
             image = resize_image(image, resolution=image_resolution)
             control_image = PIL.Image.fromarray(image)
         else:
             self.preprocessor.load(preprocessor_name)
             control_image = self.preprocessor(
-                image=image,
+                image=depthImage,
                 image_resolution=image_resolution,
                 detect_resolution=preprocess_resolution,
             )

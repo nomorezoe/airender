@@ -14,6 +14,7 @@ from utils import randomize_seed_fn
 from adetailer.common import PredictOutput
 from adetailer.mask import filter_by_ratio, mask_preprocess, sort_bboxes
 from adetailer import ultralytics_predict
+from settings import MAX_IMAGE_RESOLUTION
 import masking
 import torch
 import time
@@ -195,7 +196,7 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
         safety_checker=None,
         #load_safety_checker=False,
-        #local_files_only=True,
+        local_files_only=True,
         clip_skip=clip_skip
     )
     
@@ -211,7 +212,7 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
     )
 
     pipeline.to('cuda' if device.type == 'cuda' else 'mps')
-    setup_pipeline(pipeline, device, lora_id, vae)
+    #setup_pipeline(pipeline, device, lora_id, vae)
 
     # masks2 = get_inpaint_masks(image, "person_yolov8n-seg.pt", 'cuda' if device.type == 'cuda' else 'cpu')
     # print(masks2)
@@ -232,7 +233,7 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
     return images
 
 
-def start_controlnet_pipeline(image, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae):
+def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024):
     model = Model(task_name = control_net_model, device=device,
                   base_model_id=get_model_path(model_id),
                   scheduler_type = scheduler_type,
@@ -249,7 +250,7 @@ def start_controlnet_pipeline(image, batch_count, device, prompt, n_prompt, cont
     #print('start_controlnet_pipeline'+ str(n))
     for i in range(0, n):
         print("controlnet_start:" + str(i), flush=True)
-        result = model.process_depth(image, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=840, preprocess_resolution=840,
+        result = model.process_depth(image, depthImage, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=resolution, preprocess_resolution=resolution,
                                      num_steps=sampler_steps, guidance_scale=cfg, seed=randomize_seed_fn(seed=0, randomize_seed=True), preprocessor_name='Midas', callback=controlnet_progress)
         result[0].save("../../output/temp_depth.png")
         imageresults= [result[1]] + imageresults
@@ -273,6 +274,7 @@ def setup_pipeline(pipe, device, lora_id, vae):
         pipe.vae = vae
 
     # negative embedding
+    
     pipe.load_textual_inversion("../models/negative_embeddings/bad_prompt_version2.pt",
                                 token="bad_prompt_version2",
                                 local_files_only=True,)
@@ -316,7 +318,7 @@ def get_lora(lora_id):
     return lora_id+".safetensors"
 
 
-def main(image_id, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):
+def main(image_id, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):
    
     # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
     n_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck,"
@@ -325,9 +327,18 @@ def main(image_id, batch_count, prompt, control_net_model, model_id, scheduler_t
     start_time = time.time()
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     image = Image.open("../../capture/" + image_id + ".png")
+    
+    if use_depth_map:
+        depth_image = Image.open("../../capture/" + image_id + "_grid.png")
+    else:
+        depth_image = image
+
+
+    resolution = int(560.0 / image.height  * image.width)
+    resolution = min(MAX_IMAGE_RESOLUTION, resolution)
 
     results = start_controlnet_pipeline(
-        image, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae)
+        image, depth_image, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution)
 
     # controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11p_sd15_openpose",
     #                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
@@ -353,6 +364,9 @@ def main(image_id, batch_count, prompt, control_net_model, model_id, scheduler_t
         meta.add_text("cfg", str(cfg))
         meta.add_text("clip skip", str(clip_skip))
         meta.add_text("sampler steps", str(sampler_steps))
+        meta.add_text("vae", str(inpaint_strength))
+        meta.add_text("control net model", str(control_net_model))
+        meta.add_text("scheduler type", str(scheduler_type))
         print("image_save: " + str(i))
         images[i].save("../../output/" + image_id + "_"+ str(i) +
                        ".png", format="PNG", pnginfo=meta)
@@ -376,6 +390,7 @@ def parse_args():
     parser.add_argument('--control_net_model','-cnm', type=str, default="depth", help="control net model")
     parser.add_argument('--scheduler','-s', type=str, help="scheduler")
     parser.add_argument('--inpaint_strength','-is', type=float, default=0.4, help="inpaint strength")
+    parser.add_argument('--use_depth_magp','-d', type=bool, default=False, help="if use depth map")
     return parser.parse_args()
 
 
@@ -398,6 +413,8 @@ if __name__ == "__main__":
     # DPM++2MK, DPM++2SK, DPM++SDEK, EULARA
     print ('inpaint_strength: ' + str(args.inpaint_strength))
 
+    print ('use_depth_magp: ' + str(args.use_depth_magp))
+
     #eular
     #DPM++ 2M Karras
     #DPM++ SDE Karras
@@ -406,5 +423,5 @@ if __name__ == "__main__":
         mydir_tmp = mydir + "/../scripts/cli"
         mydir_new = os.chdir(mydir_tmp)
 
-    main(args.image, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
+    main(args.image, args.use_depth_magp, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
          args.cfg, args.clipskip, args.sampler_step, args.vae, args.inpaint_strength)

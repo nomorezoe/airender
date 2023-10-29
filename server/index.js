@@ -265,4 +265,4 @@ app.listen(port, () => {
     console.log(`Admin app listening on port ${port}`);
 });
 
-app.use(timeout('5s'))
+app.use(timeout(300000))

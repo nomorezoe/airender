@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
 const socketIO = require('socket.io');
 const bodyParser = require('body-parser');
+var timeout = require('connect-timeout')
 
 var renderRecords = {};
 

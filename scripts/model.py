@@ -85,8 +85,8 @@ class Model:
 
 
         if self.device.type == 'cuda':
-            torch.autocast("cuda")
-            pipe.enable_xformers_memory_efficient_attention()
+            #torch.autocast("cuda")
+            #pipe.enable_xformers_memory_efficient_attention()
         pipe.to(self.device)
         torch.cuda.empty_cache()
         gc.collect()

@@ -113,7 +113,11 @@ app.post('/render_progress', (req, res) => {
     }
 });
 
-app.post('/render', (req, res) => {
+app.use('/render', function(req, res, next) {
+    //req.clearTimeout(); // clear request timeout
+    req.setTimeout(300000); //set a 20s timeout for this request
+    next();
+}).post('/render', (req, res) => {
     // Get the file that was set to our field named "image"
     //console.log(req);
 

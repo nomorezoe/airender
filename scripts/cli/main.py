@@ -298,7 +298,7 @@ def get_model_path(model_id):
     if (model_id == "realisticVision"):
         return "../models/realisticVisionV51_v51VAE.safetensors"
     if (model_id == "revAnimated"):
-        return "../models/revAnimated_v11.safetensors"
+        return "../models/revAnimated_v121.safetensors"
     return "../models/"+model_id+".safetensors"
 
 

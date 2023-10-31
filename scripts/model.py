@@ -71,6 +71,7 @@ class Model:
             load_safety_checker=False,
             controlnet=controlnet,
             local_files_only=True,
+            device= self.device,
             clip_skip = self.clip_skip,
             torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
         #sampler

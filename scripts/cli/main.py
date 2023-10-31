@@ -297,25 +297,34 @@ def setup_pipeline(pipe, device, lora_id, vae):
 def get_model_path(model_id):
     if (model_id == "realisticVision"):
         return "../models/realisticVisionV51_v51VAE.safetensors"
-    if (model_id == "revAnimated"):
-        return "../models/revAnimated_v121.safetensors"
-    return "../models/"+model_id+".safetensors"
+    elif (model_id == "revAnimated"):
+        return "../models/revAnimated_v11.safetensors"
+    elif (model_id == "Arthemy Comics"):
+        return "../models/arthemyComics_v50Bakedvae.safetensors"
+    else:
+        return "../models/"+model_id+".safetensors"
 
 
 def get_inpaint_model_path(model_id):
     if (model_id == "realisticVision"):
         return "../models/realisticVisionV51_v51VAE-inpainting.safetensors"
-    if (model_id == "revAnimated"):
+    elif (model_id == "revAnimated"):
         return "../models/revAnimated_v121Inp-inpainting.safetensors"
-    if (model_id == "deliberate_v2"):
+    elif (model_id == "deliberate_v2"):
         return "../models/deliberate_v3-inpainting.safetensors"
-    return "../models/"+model_id+"-inpainting.safetensors"
+    elif (model_id == "Arthemy Comics"):
+        return "../models/arthemyComics_v50Bakedvae-inpainting.safetensors"
+    else:
+        return "../models/"+model_id+"-inpainting.safetensors"
 
 
 def get_lora(lora_id):
     if (lora_id == "empty"):
         return None
-    return lora_id+".safetensors"
+    elif (lora_id == "Jim Lee"):
+        return "jim_lee_offset_right_filesize.safetensors"
+    else:
+        return lora_id+".safetensors"
 
 
 def main(image_id, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):

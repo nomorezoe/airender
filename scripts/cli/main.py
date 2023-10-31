@@ -187,6 +187,8 @@ def start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt
 
 def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength):
     # inpaint pipe
+
+    #stablediffusionapi/rev-animated
     if model_id == "deliberate_v2":
         #print("deliberate_v2")
         pipeline = StableDiffusionInpaintPipeline.from_pretrained(
@@ -199,7 +201,6 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
         local_files_only=True,
         clip_skip=clip_skip
     )
-    
     else:
         #print("none deliberate_v2")
         pipeline = StableDiffusionInpaintPipeline.from_single_file(
@@ -234,10 +235,12 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
 
 
 def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024):
+    
     model = Model(task_name = control_net_model, device=device,
                   base_model_id=get_model_path(model_id),
                   scheduler_type = scheduler_type,
-                  clip_skip=clip_skip)
+                  clip_skip=clip_skip,
+                  from_pretrained=get_model_path_from_pretrained(model_id))
 
     setup_pipeline(model.pipe, device, lora_id, vae)
 
@@ -294,11 +297,14 @@ def setup_pipeline(pipe, device, lora_id, vae):
                                 local_files_only=True,)
 
 
+def get_model_path_from_pretrained(model_id):
+    return model_id == "revAnimated"
+
 def get_model_path(model_id):
     if (model_id == "realisticVision"):
         return "../models/realisticVisionV51_v51VAE.safetensors"
     elif (model_id == "revAnimated"):
-        return "../models/revAnimated_v11.safetensors"
+        return "stablediffusionapi/rev-animated"
     elif (model_id == "Arthemy Comics"):
         return "../models/arthemyComics_v50Bakedvae.safetensors"
     else:

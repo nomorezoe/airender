@@ -48,12 +48,14 @@ class Model:
                  task_name: str = 'Canny',
                  device: str = 'cuda',
                  scheduler_type: str = "DPM2M++K",
-                 clip_skip: int = 1):
+                 clip_skip: int = 1,
+                 from_pretrained: bool = False):
         self.device = device
         self.base_model_id = ''
         self.task_name = ''
         self.scheduler_type = scheduler_type
         self.clip_skip = clip_skip
+        self.from_pretrained = from_pretrained
         self.pipe = self.load_pipe(base_model_id, task_name, scheduler_type)
         self.preprocessor = Preprocessor()
 
@@ -65,15 +67,25 @@ class Model:
         controlnet = ControlNetModel.from_pretrained(model_id,
                                                      torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
                                                      local_files_only=True)
-        pipe = StableDiffusionControlNetPipeline.from_single_file(
+        if self.from_pretrained:
+            pipe = StableDiffusionControlNetPipeline.from_pretrained(
             base_model_id,
-            use_safetensors=True, 
-            load_safety_checker=False,
+            safety_checker=None,
             controlnet=controlnet,
             local_files_only=True,
-            device= self.device,
-            clip_skip = self.clip_skip,
-            torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
+            clip_skip=self.clip_skip,
+            torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32 
+            )
+
+        else:    
+            pipe = StableDiffusionControlNetPipeline.from_single_file(
+                base_model_id,
+                use_safetensors=True, 
+                load_safety_checker=False,
+                controlnet=controlnet,
+                local_files_only=True,
+                clip_skip = self.clip_skip,
+                torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
         #sampler
         if(scheduler_type == "DPM++2MK"):
             pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")

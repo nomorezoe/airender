@@ -134,18 +134,48 @@ app.use('/render', function(req, res, next) {
     var controlnetModlel = req.body.controlnetModlel
 
     var session = req.body.session;
-    renderRecords[session] = 0;
 
     //console.log("session====" + session);
 
     var rawImg = req.files.imageByteArray.data;
+
+    var rawImgGrid = req.files.gridImageByteArray.data;
+
+    responseCallBack = function(value){
+        res.json(value);
+    }
+
+    generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, scheduler, inpaintStrength,
+        controlnetModlel, session, rawImg, rawImgGrid, null, responseCallBack);
+
+        
+});
+
+app.use('/output', express.static('../output'));
+
+app.listen(port, () => {
+    console.log(`Admin app listening on port ${port}`);
+});
+
+//app.use(timeout(300000))
+
+
+function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, scheduler, inpaintStrength,
+    controlnetModlel, session, rawImg, rawImgGrid, progressCallBack, responseCallBack){
+
+
+    
+    renderRecords[session] = 0;
+
+    //console.log("session====" + session);
+
+   
     //base64Data = rawImg.replace(/^data:image\/png;base64,/, ''),
     var dirpath = __dirname + '/../capture/';
     var imgname = uuidv4();
     var imageFileName = imgname + '.png';
     var imageLocation = dirpath + imageFileName;
 
-    var rawImgGrid = req.files.gridImageByteArray.data;
     var imageGridFileName = imgname + '_grid.png';
     var imageGridLocation = dirpath + imageGridFileName;
 
@@ -177,11 +207,12 @@ app.use('/render', function(req, res, next) {
                     var exec = require('child_process').exec;
                     var exestring = 'python3.11 ../scripts/cli/main.py -n 1 -c ' + cfg +
                         ' -i ' + imgname +
-                        ' -m ' + model +
+                        ' -m "' + model + '"' + 
                         ' -cs ' + clipskip +
                         ' -ss ' + sampleSteps +
-                        ' -l ' + lora +
+                        ' -l "' + lora + '"' + 
                         ' -b ' + batchcount +
+                        ' -d True ' +
                         ' -v ' + vae +
                         ' -s ' + scheduler +
                         ' -is ' + inpaintStrength +
@@ -232,7 +263,7 @@ app.use('/render', function(req, res, next) {
                     python.on('close', (code) => {
                         console.log(`child process close all stdio with code ${code}`);
                         // send data to browser
-                        res.json({
+                        responseCallBack({
                             success: code == 0,
                             code: code,
                             data: imgname,
@@ -242,7 +273,7 @@ app.use('/render', function(req, res, next) {
                 else {
                     console.log("err" + err);
 
-                    res.json({
+                    responseCallBack({
                         success: false,
                         code: 100,
                         data: "image save failed",
@@ -253,20 +284,32 @@ app.use('/render', function(req, res, next) {
         else {
             console.log("err" + err);
 
-            res.json({
+            responseCallBack({
                 success: false,
                 code: 101,
                 data: "grid image save failed",
             });
         }
     });
+}
 
-});
+//socket
+/*
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 
-app.use('/output', express.static('../output'));
-
-app.listen(port, () => {
-    console.log(`Admin app listening on port ${port}`);
-});
-
-app.use(timeout(300000))
+io.on('connection', (socket) => {
+    console.log('a user connected');
+  
+    socket.on("disconnect", (reason) => {
+      console.log("a user left");
+    })
+  
+    socket.on("generate", (text) => {
+     
+    })
+  
+  });
+*/

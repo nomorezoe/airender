@@ -306,7 +306,7 @@ def get_model_path(model_id):
     elif (model_id == "revAnimated"):
         return "stablediffusionapi/rev-animated"
     elif (model_id == "Arthemy Comics"):
-        return "../models/arthemyComics_v50Bakedvae.safetensors"
+        return "../models/arthemycomics.safetensors"
     else:
         return "../models/"+model_id+".safetensors"
 

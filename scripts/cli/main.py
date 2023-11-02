@@ -319,7 +319,7 @@ def get_inpaint_model_path(model_id):
     elif (model_id == "deliberate_v2"):
         return "../models/deliberate_v3-inpainting.safetensors"
     elif (model_id == "Arthemy Comics"):
-        return "../models/arthemyComics_v50Bakedvae-inpainting.safetensors"
+        return "../models/arthemycomics-inpainting.safetensors"
     else:
         return "../models/"+model_id+"-inpainting.safetensors"
 

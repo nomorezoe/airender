@@ -20,14 +20,14 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import StableDiffusionUpscalePipeline,DDPMScheduler,DDIMScheduler
+from diffusers import StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
 
 def main(image_id, prompt):
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     
     #model_id = "stabilityai/stable-diffusion-x4-upscaler"
     model_id = "stabilityai/sd-x2-latent-upscaler"
-    pipeline = StableDiffusionUpscalePipeline.from_pretrained(
+    pipeline = StableDiffusionLatentUpscalePipeline.from_pretrained(
         model_id, 
         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
     )

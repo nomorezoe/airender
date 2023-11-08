@@ -25,19 +25,23 @@ from diffusers import StableDiffusionUpscalePipeline,DDPMScheduler,DDIMScheduler
 def main(image_id, prompt):
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     
-    model_id = "stabilityai/stable-diffusion-x4-upscaler"
-    #model_id = "stabilityai/sd-x2-latent-upscaler"
+    #model_id = "stabilityai/stable-diffusion-x4-upscaler"
+    model_id = "stabilityai/sd-x2-latent-upscaler"
     pipeline = StableDiffusionUpscalePipeline.from_pretrained(
         model_id, 
         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
     )
     pipeline.to('cuda' if device.type == 'cuda' else 'mps')
+    generator = torch.manual_seed(33)
 
     image = Image.open("../../output/" + image_id + ".png")
     upscaled_image = pipeline(prompt=prompt, 
                               image=image, 
+                              num_inference_steps=20,
+                              guidance_scale=0,
+                              generator=generator,
                               ).images[0]
-    upscaled_image.save(image_id + "upscaled.png")
+    upscaled_image.save("../../output/" + image_id + "upscaled.png")
 
 
 def parse_args():

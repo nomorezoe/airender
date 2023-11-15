@@ -242,7 +242,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                   clip_skip=clip_skip,
                   from_pretrained=get_model_path_from_pretrained(model_id))
 
-    setup_pipeline(model.pipe, device, lora_id, vae)
+    setup_pipeline(model.pipe, device, lora_id, vae, model_id)
 
     # model.set_base_model('SdValar/deliberate2')
     # model.set_base_model('stablediffusionapi/deliberate-v2')
@@ -262,7 +262,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
     return imageresults
 
 
-def setup_pipeline(pipe, device, lora_id, vae):
+def setup_pipeline(pipe, device, lora_id, vae, model_id):
     # lora
     if (lora_id != "None"):
         pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id),local_files_only=True)
@@ -294,6 +294,16 @@ def setup_pipeline(pipe, device, lora_id, vae):
                                 local_files_only=True,)
     pipe.load_textual_inversion("../models/negative_embeddings/easynegative.safetensors",
                                 token="easynegative",
+                                local_files_only=True,)
+    
+    if(model_id == "realisticVision"):
+         pipe.load_textual_inversion("../models/negative_embeddings/UnrealisticDream.pt",
+                                token="UnrealisticDream",
+                                local_files_only=True,)
+         
+    if(model_id == "Arthemy Comics"):
+         pipe.load_textual_inversion("../models/negative_embeddings/verybadimagenegative_v1.3.pt",
+                                token="verybadimagenegative_v1.3",
                                 local_files_only=True,)
 
 
@@ -341,9 +351,9 @@ def get_prompt(model_id):
 
 def get_neg_prompt(model_id):
     if(model_id == "realisticVision"):
-        return "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime), text, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck" #UnrealisticDream
+        return "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime), text, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, UnrealisticDream" #
     elif (model_id == "Arthemy Comics"):
-        return "bad-hands-5, (sketch),lowres,(text,words:1.3),watermark,(simple background),glitch,(jpeg-artifact:1.2),compressed, jpeg" #verybadimagenegative_v1.3,
+        return "bad-hands-5, verybadimagenegative_v1.3, (sketch),lowres,(text,words:1.3),watermark,(simple background),glitch,(jpeg-artifact:1.2),compressed, jpeg" #
     return "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
 
 

@@ -332,12 +332,26 @@ def get_lora(lora_id):
     else:
         return lora_id+".safetensors"
 
+def get_prompt(model_id):
+    if(model_id == "realisticVision"):
+        return "RAW photo, subject, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
+    elif (model_id == "Arthemy Comics"):
+        return "(artwork:1.2),(lineart:1.33),[CHARACTER | SETTING | EMOTIONS],(hyperdefined),(inked-art),[COLORS | AESTHETIC],complex lighting,(flat colors),ultradetailed,(fine-details:1.2),absurdres,(atmosphere)"
+    return ""
+
+def get_neg_prompt(model_id):
+    if(model_id == "realisticVision"):
+        return "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime), text, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck" #UnrealisticDream
+    elif (model_id == "Arthemy Comics"):
+        return "bad-hands-5, (sketch),lowres,(text,words:1.3),watermark,(simple background),glitch,(jpeg-artifact:1.2),compressed, jpeg" #verybadimagenegative_v1.3,
+    return "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
+
 
 def main(image_id, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):
    
     # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
-    n_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck,"
-    n_prompt = n_prompt + " bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
+    prompt = prompt + get_prompt(model_id)
+    n_prompt = get_neg_prompt(model_id)
 
     start_time = time.time()
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')

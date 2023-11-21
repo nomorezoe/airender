@@ -438,7 +438,7 @@ def parse_args():
     parser.add_argument('--lora', '-l', type=str, help="lora id")
     parser.add_argument('--batch_count', '-b', type=int, help = "batch count", default = 1)
 
-    parser.add_argument('--vae','-v', type=bool, default=True, help="if use vae")
+    parser.add_argument('--vae','-v', type=bool, default=False, help="if use vae")
     parser.add_argument('--control_net_model','-cnm', type=str, default="depth", help="control net model")
     parser.add_argument('--scheduler','-s', type=str, help="scheduler")
     parser.add_argument('--inpaint_strength','-is', type=float, default=0.4, help="inpaint strength")

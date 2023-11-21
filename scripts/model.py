@@ -101,7 +101,7 @@ class Model:
             print("base_model_id" + base_model_id)
             if self.use_xl:
                 pipe = StableDiffusionXLControlNetPipeline.from_single_file(
-                    "https://civitai.com/api/download/models/142603",
+                    base_model_id,
                     use_safetensors=True, 
                     load_safety_checker=False,
                     controlnet=controlnet,

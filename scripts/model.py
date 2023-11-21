@@ -72,6 +72,7 @@ class Model:
             model_id = CONTROLNET_MODEL_XL_IDS[task_name]
         else:
             model_id = CONTROLNET_MODEL_IDS[task_name]
+        print("model id " + model_id)
         controlnet = ControlNetModel.from_pretrained(model_id,
                                                      torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
                                                      local_files_only=True)

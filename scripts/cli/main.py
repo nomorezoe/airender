@@ -240,7 +240,8 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                   base_model_id=get_model_path(model_id),
                   scheduler_type = scheduler_type,
                   clip_skip=clip_skip,
-                  from_pretrained=get_model_path_from_pretrained(model_id))
+                  from_pretrained=get_model_path_from_pretrained(model_id),
+                  use_xl=isXLModel(model_id))
 
     setup_pipeline(model.pipe, device, lora_id, vae, model_id)
 
@@ -297,11 +298,13 @@ def setup_pipeline(pipe, device, lora_id, vae, model_id):
                                 local_files_only=True,)
     
     if(model_id == "realisticVision"):
+         print("load UnrealisticDream")
          pipe.load_textual_inversion("../models/negative_embeddings/UnrealisticDream.pt",
                                 token="UnrealisticDream",
                                 local_files_only=True,)
          
     if(model_id == "Arthemy Comics"):
+         print("load Arthemy Comics")
          pipe.load_textual_inversion("../models/negative_embeddings/verybadimagenegative_v1.3.pt",
                                 token="verybadimagenegative_v1.3",
                                 local_files_only=True,)
@@ -309,6 +312,9 @@ def setup_pipeline(pipe, device, lora_id, vae, model_id):
 
 def get_model_path_from_pretrained(model_id):
     return model_id == "revAnimated"
+
+def isXLModel(model_id):
+    return  model_id == "realitycheckXL"
 
 def get_model_path(model_id):
     if (model_id == "realisticVision"):
@@ -330,6 +336,8 @@ def get_inpaint_model_path(model_id):
         return "../models/deliberate_v3-inpainting.safetensors"
     elif (model_id == "Arthemy Comics"):
         return "../models/arthemycomics-inpainting.safetensors"
+    elif (model_id == "realitycheckXL"):
+        return "../modes/realitycheckXL.safetensors"
     else:
         return "../models/"+model_id+"-inpainting.safetensors"
 
@@ -357,7 +365,7 @@ def get_neg_prompt(model_id):
     return "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
 
 
-def main(image_id, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):
+def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):
    
     # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
     prompt = prompt + get_prompt(model_id)
@@ -387,10 +395,10 @@ def main(image_id, use_depth_map, batch_count, prompt, control_net_model, model_
     # image.save("test_before.png")
     # image = start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt)
     # image.save("test_inpaint.png")
-
-    images = start_inpaint_pipeline(
-        images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength)
-    print(f"time -2: {time.time() - start_time}")
+    if(use_inpaint):
+        images = start_inpaint_pipeline(
+            images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength)
+        print(f"time -2: {time.time() - start_time}")
 
     n = batch_count
     for i in range(0, n):
@@ -430,6 +438,7 @@ def parse_args():
     parser.add_argument('--scheduler','-s', type=str, help="scheduler")
     parser.add_argument('--inpaint_strength','-is', type=float, default=0.4, help="inpaint strength")
     parser.add_argument('--use_depth_magp','-d', type=bool, default=False, help="if use depth map")
+    parser.add_argument('--use_inpaint', '-ip', type=bool, default=False, help="if use inpaint")
     return parser.parse_args()
 
 
@@ -453,6 +462,7 @@ if __name__ == "__main__":
     print ('inpaint_strength: ' + str(args.inpaint_strength))
 
     print ('use_depth_magp: ' + str(args.use_depth_magp))
+    print ('use_inpaint' + str(args.use_inpaint))
 
     #eular
     #DPM++ 2M Karras
@@ -462,5 +472,5 @@ if __name__ == "__main__":
         mydir_tmp = mydir + "/../scripts/cli"
         mydir_new = os.chdir(mydir_tmp)
 
-    main(args.image, args.use_depth_magp, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
+    main(args.image, args.use_inpaint, args.use_depth_magp, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
          args.cfg, args.clipskip, args.sampler_step, args.vae, args.inpaint_strength)

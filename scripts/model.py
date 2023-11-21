@@ -11,6 +11,7 @@ from diffusers import (ControlNetModel, DiffusionPipeline,
                        DPMSolverMultistepScheduler,
                        DPMSolverSinglestepScheduler,
                        EulerAncestralDiscreteScheduler,
+                       StableDiffusionXLControlNetPipeline,
                        DPMSolverSDEScheduler)
 
 from cv_utils import resize_image
@@ -49,13 +50,15 @@ class Model:
                  device: str = 'cuda',
                  scheduler_type: str = "DPM2M++K",
                  clip_skip: int = 1,
-                 from_pretrained: bool = False):
+                 from_pretrained: bool = False,
+                 use_xl: bool = False):
         self.device = device
         self.base_model_id = ''
         self.task_name = ''
         self.scheduler_type = scheduler_type
         self.clip_skip = clip_skip
         self.from_pretrained = from_pretrained
+        self.use_xl = use_xl
         self.pipe = self.load_pipe(base_model_id, task_name, scheduler_type)
         self.preprocessor = Preprocessor()
 
@@ -78,14 +81,27 @@ class Model:
             )
 
         else:    
-            pipe = StableDiffusionControlNetPipeline.from_single_file(
-                base_model_id,
-                use_safetensors=True, 
-                load_safety_checker=False,
-                controlnet=controlnet,
-                local_files_only=True,
-                clip_skip = self.clip_skip,
-                torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
+            print("use_xl" + str(self.use_xl))
+            print("base_model_id" + base_model_id)
+            if self.use_xl:
+                pipe = StableDiffusionXLControlNetPipeline.from_single_file(
+                    base_model_id,
+                    use_safetensors=True, 
+                    load_safety_checker=False,
+                    controlnet=controlnet,
+                    local_files_only=True,
+                    clip_skip = self.clip_skip,
+                    torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
+            
+            else:
+                pipe = StableDiffusionControlNetPipeline.from_single_file(
+                    base_model_id,
+                    use_safetensors=True, 
+                    load_safety_checker=False,
+                    controlnet=controlnet,
+                    local_files_only=True,
+                    clip_skip = self.clip_skip,
+                    torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
         #sampler
         if(scheduler_type == "DPM++2MK"):
             pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
@@ -179,6 +195,8 @@ class Model:
         seed: int,
         low_threshold: int,
         high_threshold: int,
+        callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
+    
     ) -> list[PIL.Image.Image]:
         if image is None:
             raise ValueError
@@ -202,6 +220,7 @@ class Model:
             num_steps=num_steps,
             guidance_scale=guidance_scale,
             seed=seed,
+            callback=callback
         )
         return [control_image] + results
 
@@ -262,6 +281,7 @@ class Model:
         guidance_scale: float,
         seed: int,
         preprocessor_name: str,
+        callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
     ) -> list[PIL.Image.Image]:
         if image is None:
             raise ValueError
@@ -271,6 +291,7 @@ class Model:
             raise ValueError
 
         if preprocessor_name == 'None':
+            image = np.array(image)
             image = HWC3(image)
             image = resize_image(image, resolution=image_resolution)
             control_image = PIL.Image.fromarray(image)
@@ -299,6 +320,7 @@ class Model:
             num_steps=num_steps,
             guidance_scale=guidance_scale,
             seed=seed,
+            callback=callback,
         )
         return [control_image] + results
 

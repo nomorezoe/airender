@@ -127,7 +127,7 @@ app.use('/render', function(req, res, next) {
     var lora = req.body.lora;
     var prompt = req.body.prompt;
 
-    var vae = req.body.vae == 1;
+    var vae = (req.body.vae == 1)?"True":"False";
     var sampleSteps = req.body.sampleSteps;
     var scheduler = req.body.scheduler;
     var inpaintStrength = req.body.inpaintStrength

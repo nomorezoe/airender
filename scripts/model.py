@@ -34,7 +34,7 @@ CONTROLNET_MODEL_IDS = {
     'inpaint': 'lllyasviel/control_v11e_sd15_inpaint',
 }
 CONTROLNET_MODEL_XL_IDS = {
-    'depth':'thibaud/controlnet-sd21-depth-diffusers',
+    'depth':'diffusers/controlnet-depth-sdxl-1.0',
 }
 
 def download_all_controlnet_weights() -> None:

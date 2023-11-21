@@ -4,7 +4,7 @@ from diffusers import ControlNetModel,StableDiffusionPipeline,StableDiffusionInp
 from transformers import CLIPTokenizer
 
 
-ControlNetModel.from_pretrained("thibaud/controlnet-sd21-depth-diffusers")
+ControlNetModel.from_pretrained("diffusers/controlnet-depth-sdxl-1.0")
 #CLIPTokenizer.from_pretrained("laion/CLIP-ViT-bigG-14-laion2B-39B-b160k", pad_token="!")
 #pipeline = StableDiffusionPipeline.from_pretrained("stablediffusionapi/rev-animated")
 #pipeline = StableDiffusionInpaintPipeline.from_pretrained("5w4n/deliberate-v2-inpainting")

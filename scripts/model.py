@@ -33,7 +33,9 @@ CONTROLNET_MODEL_IDS = {
     'ip2p': 'lllyasviel/control_v11e_sd15_ip2p',
     'inpaint': 'lllyasviel/control_v11e_sd15_inpaint',
 }
-
+CONTROLNET_MODEL_XL_IDS = {
+    'depth':'thibaud/controlnet-sd21-depth-diffusers',
+}
 
 def download_all_controlnet_weights() -> None:
     ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-depth")
@@ -66,7 +68,10 @@ class Model:
         if base_model_id == self.base_model_id and task_name == self.task_name and hasattr(
                 self, 'pipe') and self.pipe is not None:
             return self.pipe
-        model_id = CONTROLNET_MODEL_IDS[task_name]
+        if self.use_xl:
+            model_id = CONTROLNET_MODEL_XL_IDS[task_name]
+        else:
+            model_id = CONTROLNET_MODEL_IDS[task_name]
         controlnet = ControlNetModel.from_pretrained(model_id,
                                                      torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
                                                      local_files_only=True)

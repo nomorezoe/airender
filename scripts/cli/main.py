@@ -243,7 +243,8 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                   from_pretrained=get_model_path_from_pretrained(model_id),
                   use_xl=isXLModel(model_id))
 
-    setup_pipeline(model.pipe, device, lora_id, vae, model_id)
+    if (isXLModel(model_id) == False):
+        setup_pipeline(model.pipe, device, lora_id, vae, model_id)
 
     # model.set_base_model('SdValar/deliberate2')
     # model.set_base_model('stablediffusionapi/deliberate-v2')
@@ -311,7 +312,11 @@ def setup_pipeline(pipe, device, lora_id, vae, model_id):
 
 
 def get_model_path_from_pretrained(model_id):
-    return model_id == "revAnimated"
+    if( model_id == "revAnimated"):
+        return True
+    elif(model_id == "realitycheckXL"):
+        return False
+    return False
 
 def isXLModel(model_id):
     return  model_id == "realitycheckXL"

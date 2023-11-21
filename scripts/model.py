@@ -77,26 +77,35 @@ class Model:
                                                      torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
                                                      local_files_only=True)
         if self.from_pretrained:
-            pipe = StableDiffusionControlNetPipeline.from_pretrained(
-            base_model_id,
-            safety_checker=None,
-            controlnet=controlnet,
-            local_files_only=True,
-            clip_skip=self.clip_skip,
-            torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32 
-            )
+            if self.use_xl:
+                pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
+                "stabilityai/stable-diffusion-xl-base-1.0",
+                safety_checker=None,
+                controlnet=controlnet,
+                #local_files_only=True,
+                #clip_skip=self.clip_skip,
+                torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32 
+                )
+            else:
+                pipe = StableDiffusionControlNetPipeline.from_pretrained(
+                base_model_id,
+                safety_checker=None,
+                controlnet=controlnet,
+                local_files_only=True,
+                clip_skip=self.clip_skip,
+                torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32 
+                )
 
         else:    
             print("use_xl" + str(self.use_xl))
             print("base_model_id" + base_model_id)
             if self.use_xl:
                 pipe = StableDiffusionXLControlNetPipeline.from_single_file(
-                    base_model_id,
+                    "https://civitai.com/api/download/models/142603",
                     use_safetensors=True, 
                     load_safety_checker=False,
                     controlnet=controlnet,
-                    local_files_only=True,
-                    clip_skip = self.clip_skip,
+                    #local_files_only=True,
                     torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
             
             else:

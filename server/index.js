@@ -212,7 +212,7 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
                         ' -ss ' + sampleSteps +
                         ' -l "' + lora + '"' + 
                         ' -b ' + batchcount +
-                        ' -d True ' +
+                        ' -d True -ip True' +
                         ' -v ' + vae +
                         ' -s ' + scheduler +
                         ' -is ' + inpaintStrength +

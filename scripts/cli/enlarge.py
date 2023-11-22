@@ -50,6 +50,8 @@ def main(image_id, prompt):
                               guidance_scale=0,
                               generator=generator,
                               ).images[0]
+    torch.cuda.empty_cache()
+    gc.collect()
     upscaled_image.save("../../output/" + image_id + "upscaled.png")
 
 

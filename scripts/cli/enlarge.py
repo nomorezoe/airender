@@ -1,6 +1,5 @@
 import os
 import sys
-import gc
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
@@ -21,35 +20,25 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import StableDiffusionUpscalePipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
+from diffusers import StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
 
 def main(image_id, prompt):
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     
     model_id = "stabilityai/stable-diffusion-x4-upscaler"
     #model_id = "stabilityai/sd-x2-latent-upscaler"
-    '''
     pipeline = StableDiffusionLatentUpscalePipeline.from_pretrained(
         model_id, 
         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
     )
-    '''
-    pipeline = StableDiffusionUpscalePipeline.from_pretrained(
-        model_id, 
-        torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-    )
     pipeline.to('cuda' if device.type == 'cuda' else 'mps')
-    #generator = torch.Generator(device="cuda").manual_seed(0)
 
-    image = Image.open("../../output/" + image_id + ".png").convert("RGB").resize((128, 128))
-    torch.cuda.empty_cache()
-    gc.collect()
+    image = Image.open("../../output/" + image_id + ".png")
     upscaled_image = pipeline(prompt=prompt, 
                               image=image, 
-                              noise_level=1
+                              noise_level=25,
+                              guidance_scale=7,
                               ).images[0]
-    torch.cuda.empty_cache()
-    gc.collect()
     upscaled_image.save("../../output/" + image_id + "upscaled.png")
 
 

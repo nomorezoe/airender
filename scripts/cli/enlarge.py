@@ -1,5 +1,6 @@
 import os
 import sys
+import gc
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
@@ -41,6 +42,8 @@ def main(image_id, prompt):
     generator = torch.Generator(device="cuda").manual_seed(0)
 
     image = Image.open("../../output/" + image_id + ".png").convert("RGB")
+    torch.cuda.empty_cache()
+    gc.collect()
     upscaled_image = pipeline(prompt=prompt, 
                               image=image, 
                               num_inference_steps=20,

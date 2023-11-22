@@ -467,7 +467,7 @@ if __name__ == "__main__":
     print ('inpaint_strength: ' + str(args.inpaint_strength))
 
     print ('use_depth_magp: ' + str(args.use_depth_map > 0))
-    print ('use_inpaint' + str(args.use_inpaint > 0))
+    print ('use_inpaint: ' + str(args.use_inpaint > 0))
 
     #eular
     #DPM++ 2M Karras

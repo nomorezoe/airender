@@ -40,7 +40,7 @@ def main(image_id, prompt):
 
     pipeline.to('cuda' if device.type == 'cuda' else 'mps')
 
-    image = Image.open("../../output/" + image_id + ".png")
+    image = Image.open("../../output/" + image_id + ".png").convert("RGB")
     upscaled_image = pipeline(prompt=prompt, 
                               image=image, 
                               noise_level=25,

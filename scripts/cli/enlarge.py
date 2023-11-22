@@ -43,8 +43,8 @@ def main(image_id, prompt):
     image = Image.open("../../output/" + image_id + ".png").convert("RGB")
     upscaled_image = pipeline(prompt=prompt, 
                               image=image, 
-                              #noise_level=25,
-                              guidance_scale=7,
+                              num_inference_steps=20,
+                            guidance_scale=0,
                               ).images[0]
     upscaled_image.save("../../output/" + image_id + "upscaled.png")
 

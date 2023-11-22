@@ -46,6 +46,7 @@ def main(image_id, prompt):
     gc.collect()
     upscaled_image = pipeline(prompt=prompt, 
                               image=image, 
+                              noise_level=1
                               ).images[0]
     torch.cuda.empty_cache()
     gc.collect()

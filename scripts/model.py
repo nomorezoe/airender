@@ -109,7 +109,7 @@ class Model:
                     use_safetensors=True, 
                     load_safety_checker=False,
                     controlnet=controlnet,
-                    #local_files_only=True,
+                    local_files_only=True,
                     torch_dtype=torch.float32 if self.device.type == 'cuda' else torch.float32)
             
             else:

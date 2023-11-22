@@ -70,12 +70,16 @@ class Model:
             return self.pipe
         if self.use_xl:
             model_id = CONTROLNET_MODEL_XL_IDS[task_name]
+            print("model id " + model_id)
+            controlnet = ControlNetModel.from_pretrained(model_id,
+                                                        torch_dtype=torch.float32 if self.device.type == 'cuda' else torch.float32,
+                                                        local_files_only=True)
         else:
             model_id = CONTROLNET_MODEL_IDS[task_name]
-        print("model id " + model_id)
-        controlnet = ControlNetModel.from_pretrained(model_id,
-                                                     torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
-                                                     local_files_only=True)
+            print("model id " + model_id)
+            controlnet = ControlNetModel.from_pretrained(model_id,
+                                                        torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
+                                                        local_files_only=True)
         if self.from_pretrained:
             if self.use_xl:
                 pipe = StableDiffusionXLControlNetPipeline.from_pretrained(

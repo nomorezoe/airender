@@ -41,7 +41,7 @@ def main(image_id, prompt):
     pipeline.to('cuda' if device.type == 'cuda' else 'mps')
     generator = torch.Generator(device="cuda").manual_seed(0)
 
-    image = Image.open("../../output/" + image_id + ".png").convert("RGB")
+    image = Image.open("../../output/" + image_id + ".png").convert("RGB").resize((128, 128))
     torch.cuda.empty_cache()
     gc.collect()
     upscaled_image = pipeline(prompt=prompt, 

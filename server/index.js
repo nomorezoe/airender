@@ -127,7 +127,7 @@ app.use('/render', function(req, res, next) {
     var lora = req.body.lora;
     var prompt = req.body.prompt;
 
-    var vae = (req.body.vae == 1)?"True":"False";
+    var vae = (req.body.vae == 1)? 1:0;
     var sampleSteps = req.body.sampleSteps;
     var scheduler = req.body.scheduler;
     var inpaintStrength = req.body.inpaintStrength
@@ -212,7 +212,7 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
                         ' -ss ' + sampleSteps +
                         ' -l "' + lora + '"' + 
                         ' -b ' + batchcount +
-                        ' -d True -ip True' +
+                        ' -d 1 -ip 1' +
                         ' -v ' + vae +
                         ' -s ' + scheduler +
                         ' -is ' + inpaintStrength +

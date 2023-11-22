@@ -113,7 +113,7 @@ def inpaint(image, mask, pipeline, prompt, n_prompt, inpaint_strength):
     # init_image.show()
     # mask_image.show()
     result = pipeline(prompt=prompt, width=512, height=512, negative_prompt=n_prompt, image=init_image,
-                        strength=inpaint_strength, mask_image=mask_image,  num_inference_steps=28, callback=inpaint_progress).images[0]
+                        strength=inpaint_strength, mask_image=mask_image,  num_inference_steps=28, callback_steps = 1, callback=inpaint_progress).images[0] #, 
     # result.show()
     result = images.resize_image(1, result, original_w, original_h)
 
@@ -438,12 +438,12 @@ def parse_args():
     parser.add_argument('--lora', '-l', type=str, help="lora id")
     parser.add_argument('--batch_count', '-b', type=int, help = "batch count", default = 1)
 
-    parser.add_argument('--vae','-v', type=bool, default=False, help="if use vae")
+    parser.add_argument('--vae','-v', type=int, default=0, help="if use vae")  # default=False, h
     parser.add_argument('--control_net_model','-cnm', type=str, default="depth", help="control net model")
     parser.add_argument('--scheduler','-s', type=str, help="scheduler")
     parser.add_argument('--inpaint_strength','-is', type=float, default=0.4, help="inpaint strength")
-    parser.add_argument('--use_depth_magp','-d', type=bool, default=False, help="if use depth map")
-    parser.add_argument('--use_inpaint', '-ip', type=bool, default=False, help="if use inpaint")
+    parser.add_argument('--use_depth_map','-d', type=int, default=0, help="if use depth map")
+    parser.add_argument('--use_inpaint', '-ip', type=int, default=0, help="if use inpaint")
     return parser.parse_args()
 
 
@@ -459,15 +459,15 @@ if __name__ == "__main__":
     print('lora_id: ' + args.lora)
     print('batch_count:  '+ str(args.batch_count))
 
-    print ('vae: ' + str(args.vae))
+    print ('vae: ' + str(args.vae > 0))
     print ('control_net_model: ' + str(args.control_net_model))
     # canny, depth, scribble
     print ('scheduler: ' + str(args.scheduler))
     # DPM++2MK, DPM++2SK, DPM++SDEK, EULARA
     print ('inpaint_strength: ' + str(args.inpaint_strength))
 
-    print ('use_depth_magp: ' + str(args.use_depth_magp))
-    print ('use_inpaint' + str(args.use_inpaint))
+    print ('use_depth_magp: ' + str(args.use_depth_map > 0))
+    print ('use_inpaint' + str(args.use_inpaint > 0))
 
     #eular
     #DPM++ 2M Karras
@@ -477,5 +477,5 @@ if __name__ == "__main__":
         mydir_tmp = mydir + "/../scripts/cli"
         mydir_new = os.chdir(mydir_tmp)
 
-    main(args.image, args.use_inpaint, args.use_depth_magp, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
-         args.cfg, args.clipskip, args.sampler_step, args.vae, args.inpaint_strength)
+    main(args.image, args.use_inpaint > 0, args.use_depth_map >0, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
+         args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength)

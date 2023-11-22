@@ -25,8 +25,8 @@ from diffusers import StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMSch
 def main(image_id, prompt):
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     
-    #model_id = "stabilityai/stable-diffusion-x4-upscaler"
-    model_id = "stabilityai/sd-x2-latent-upscaler"
+    model_id = "stabilityai/stable-diffusion-x4-upscaler"
+    #model_id = "stabilityai/sd-x2-latent-upscaler"
     pipeline = StableDiffusionLatentUpscalePipeline.from_pretrained(
         model_id, 
         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,

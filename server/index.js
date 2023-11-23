@@ -160,6 +160,44 @@ app.listen(port, () => {
 //app.use(timeout(300000))
 
 
+app.use('/upscale', function(req, res, next) {
+    //req.clearTimeout(); // clear request timeout
+    req.setTimeout(300000); //set a 20s timeout for this request
+    next();
+}).post('/upscale', (req, res) => {
+    console.log("body"+ req.body);
+    var filename = req.body.filename;
+
+    var exec = require('child_process').exec;
+    var exestring = 'python3.11 ../scripts/cli/upscaler.py' + ' -i ' + filename;
+
+    console.log(exestring);
+    const python = exec(exestring);
+
+    responseCallBack = function(value){
+        res.json(value);
+    }
+    // collect data from script
+    python.stdout.on('data', function (data) {
+
+    });
+    python.stderr.on('data', (data) => {
+        console.error(`data: ${data}`);
+    });
+
+    // in close event we are sure that stream from child process is closed
+    python.on('close', (code) => {
+        console.log(`child process close all stdio with code ${code}`);
+        // send data to browser
+        responseCallBack({
+            success: code == 0,
+            code: code,
+            data: filename +"_upscale",
+        });
+    })
+
+});
+
 function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, scheduler, inpaintStrength,
     controlnetModlel, session, rawImg, rawImgGrid, progressCallBack, responseCallBack){
 

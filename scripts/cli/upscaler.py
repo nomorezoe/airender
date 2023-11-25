@@ -46,16 +46,19 @@ def img2img_upscale(image_id):
     
     if 'prompt' in image.text:
         prompt = image.text["prompt"]
+        print("prompt: "+prompt)
     else:
         print("not has propmpt")
 
     if 'nprompt' in image.text:
         nprompt = image.text["nprompt"]
+        print("nprompt: "+nprompt)
     else:
         print("not has nprompt")
 
     if 'model' in image.text:
         model = image.text["model"]
+        print("model: "+model)
     else:
         print("not has model")
 

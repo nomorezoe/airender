@@ -23,6 +23,7 @@ import cv2
 import images
 import argparse
 from diffusers import AutoencoderKL, StableDiffusionInpaintPipeline
+import StyleSelectorXL
 
 
 # from controlnet_aux import OpenposeDetector
@@ -255,8 +256,8 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
     #print('start_controlnet_pipeline'+ str(n))
     for i in range(0, n):
         print("controlnet_start:" + str(i), flush=True)
-        result = model.process_depth(image, depthImage, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=resolution, preprocess_resolution=resolution,
-                                     num_steps=sampler_steps, guidance_scale=cfg, seed=randomize_seed_fn(seed=0, randomize_seed=True), preprocessor_name='Midas', callback=controlnet_progress)
+        result = model.process_depth(image, image, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=resolution, preprocess_resolution=resolution,
+                                     num_steps=sampler_steps, guidance_scale=cfg, seed=0, preprocessor_name='Midas', callback=controlnet_progress)
         result[0].save("../../output/temp_depth.png")
         imageresults= [result[1]] + imageresults
         #print("imageresults" + str(len(imageresults)))
@@ -319,7 +320,11 @@ def get_model_path_from_pretrained(model_id):
     return False
 
 def isXLModel(model_id):
-    return  model_id == "realitycheckXL"
+    if(model_id == "realitycheckXL"):
+        return True
+    if(model_id == "sd_xl_base"):
+        return True
+    return False
 
 def get_model_path(model_id):
     if (model_id == "realisticVision"):
@@ -328,6 +333,8 @@ def get_model_path(model_id):
         return "stablediffusionapi/rev-animated"
     elif (model_id == "Arthemy Comics"):
         return "../models/arthemycomics.safetensors"
+    elif (model_id == "sd_xl_base"):
+        return "../models/sd_xl_base_1.0.safetensors"
     else:
         return "../models/"+model_id+".safetensors"
 
@@ -356,18 +363,27 @@ def get_lora(lora_id):
         return lora_id+".safetensors"
 
 def get_prompt(model_id):
+    #style =  "Watercolor painting {prompt} . Vibrant, beautiful, painterly, detailed, textural, artistic"
+    prompt = ""
     if(model_id == "realisticVision"):
-        return "RAW photo, subject, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
+        prompt = "RAW photo, subject, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
     elif (model_id == "Arthemy Comics"):
-        return "(artwork:1.2),(lineart:1.33),[CHARACTER | SETTING | EMOTIONS],(hyperdefined),(inked-art),[COLORS | AESTHETIC],complex lighting,(flat colors),ultradetailed,(fine-details:1.2),absurdres,(atmosphere)"
-    return ""
+        prompt = "(artwork:1.2),(lineart:1.33),[CHARACTER | SETTING | EMOTIONS],(hyperdefined),(inked-art),[COLORS | AESTHETIC],complex lighting,(flat colors),ultradetailed,(fine-details:1.2),absurdres,(atmosphere)"
+     
+    #prompt = style.replace(" {prompt}", prompt)
+    return prompt
 
 def get_neg_prompt(model_id):
+    #style = "anime, photorealistic, 35mm film, deformed, glitch, low contrast, noisy"
+    prompt = ""
     if(model_id == "realisticVision"):
-        return "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime), text, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, UnrealisticDream" #
+        prompt = "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime), text, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, UnrealisticDream" #
     elif (model_id == "Arthemy Comics"):
-        return "bad-hands-5, verybadimagenegative_v1.3, (sketch),lowres,(text,words:1.3),watermark,(simple background),glitch,(jpeg-artifact:1.2),compressed, jpeg" #
-    return "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
+        prompt = "bad-hands-5, verybadimagenegative_v1.3, (sketch),lowres,(text,words:1.3),watermark,(simple background),glitch,(jpeg-artifact:1.2),compressed, jpeg" #
+    prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
+
+    #prompt = style + prompt
+    return prompt
 
 
 def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):

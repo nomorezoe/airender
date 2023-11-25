@@ -12,7 +12,7 @@ from diffusers import (ControlNetModel, DiffusionPipeline,
                        DPMSolverSinglestepScheduler,
                        EulerAncestralDiscreteScheduler,
                        StableDiffusionXLControlNetPipeline,
-                       DPMSolverSDEScheduler)
+                       DPMSolverSDEScheduler, AutoencoderKL)
 
 from cv_utils import resize_image
 from preprocessor import Preprocessor
@@ -70,7 +70,7 @@ class Model:
             return self.pipe
         if self.use_xl:
             model_id = CONTROLNET_MODEL_XL_IDS[task_name]
-            print("model id " + model_id)
+            print("model xl id " + model_id)
             controlnet = ControlNetModel.from_pretrained(model_id,
                                                         torch_dtype=torch.float32 if self.device.type == 'cuda' else torch.float32,
                                                         local_files_only=True)
@@ -110,7 +110,8 @@ class Model:
                     load_safety_checker=False,
                     controlnet=controlnet,
                     local_files_only=True,
-                    torch_dtype=torch.float32 if self.device.type == 'cuda' else torch.float32)
+                    vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32),
+                    torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
             
             else:
                 pipe = StableDiffusionControlNetPipeline.from_single_file(
@@ -193,12 +194,14 @@ class Model:
     ) -> list[PIL.Image.Image]:
         generator = torch.Generator().manual_seed(seed)
         return self.pipe(prompt=prompt,
-                         negative_prompt=negative_prompt,
-                         guidance_scale=guidance_scale,
-                         num_images_per_prompt=num_images,
+                         #negative_prompt=negative_prompt,
+                         #guidance_scale=guidance_scale,
+                         #num_images_per_prompt=num_images,
                          num_inference_steps=num_steps,
                          generator=generator,
                          callback=callback,
+                         #strength=0.99,
+                         controlnet_conditioning_scale=0.5,
                          image=control_image).images
 
     @torch.inference_mode()
@@ -566,6 +569,7 @@ class Model:
                 image_resolution=image_resolution,
                 detect_resolution=preprocess_resolution,
             )
+        #generator = torch.Generator(device="cpu").manual_seed(0)
         self.load_controlnet_weight('depth')
         results = self.run_pipe(
             prompt=self.get_prompt(prompt, additional_prompt),

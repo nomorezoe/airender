@@ -74,7 +74,7 @@ def img2img_upscale(image_id):
                                                               torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
     else:
         pipe = StableDiffusionImg2ImgPipeline.from_single_file(model,
-                                                                local_files_only=True,
+                                                                #local_files_only=True,
                                                                 use_safetensors=True,
                                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
     #pipe.to(device) 

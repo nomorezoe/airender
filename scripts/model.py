@@ -193,7 +193,9 @@ class Model:
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
     ) -> list[PIL.Image.Image]:
         generator = torch.Generator().manual_seed(seed)
-        return self.pipe(prompt=prompt,
+        if self.use_xl:
+            print("xl pipe")
+            return self.pipe(prompt=prompt,
                          #negative_prompt=negative_prompt,
                          #guidance_scale=guidance_scale,
                          #num_images_per_prompt=num_images,
@@ -203,6 +205,16 @@ class Model:
                          #strength=0.99,
                          controlnet_conditioning_scale=0.5,
                          image=control_image).images
+        else:
+            print("non xl pipe")
+            return self.pipe(prompt=prompt,
+                             negative_prompt=negative_prompt,
+                             guidance_scale=guidance_scale,
+                             num_images_per_prompt=num_images,
+                             num_inference_steps=num_steps,
+                             generator=generator,
+                             callback=callback,
+                             image=control_image).images
 
     @torch.inference_mode()
     def process_canny(

@@ -257,7 +257,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
     for i in range(0, n):
         print("controlnet_start:" + str(i), flush=True)
         result = model.process_depth(image, image, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=resolution, preprocess_resolution=resolution,
-                                     num_steps=sampler_steps, guidance_scale=cfg, seed=0, preprocessor_name='Midas', callback=controlnet_progress)
+                                     num_steps=sampler_steps, guidance_scale=cfg, seed=randomize_seed_fn(seed=0, randomize_seed=True), preprocessor_name='Midas', callback=controlnet_progress)
         result[0].save("../../output/temp_depth.png")
         imageresults= [result[1]] + imageresults
         #print("imageresults" + str(len(imageresults)))

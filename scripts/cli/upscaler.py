@@ -72,7 +72,7 @@ def img2img_upscale(image_id):
     if(get_model_path_from_pretrained(model)):
         print("from_pretrained" + model)
         pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model, 
-                                                              local_files_only=True,
+                                                              #local_files_only=True,
                                                               revision="fp16" if device.type == 'cuda' else "fp32",
                                                               torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
                                                               )

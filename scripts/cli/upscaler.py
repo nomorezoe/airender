@@ -97,5 +97,5 @@ if __name__ == "__main__":
     mydir_tmp = mydir + "/../scripts/cli"
     mydir_new = os.chdir(mydir_tmp)
 
-    esrgan(args.image)
+    img2img_upscale(args.image)
     #esrgan(args.image)

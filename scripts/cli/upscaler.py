@@ -89,7 +89,7 @@ def img2img_upscale(image_id):
     #pipe.enable_attention_slicing()
     pipe.to(device) 
 
-    images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = 7, image=sr_image, strength=0.75, guidance_scale=7).images
+    images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = 20, image=sr_image, strength=0.75, guidance_scale=7).images
     images[0].save("../../output/"+ image_id + "_upscale.png")
 
 

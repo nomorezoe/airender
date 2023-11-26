@@ -57,7 +57,7 @@ def img2img_upscale(image_id):
         print("not has nprompt")
 
     if 'model' in image.text:
-        #model = image.text["model"]
+        model = image.text["model"]
         print("model: "+model)
     else:
         print("not has model")
@@ -71,12 +71,14 @@ def img2img_upscale(image_id):
     if(get_model_path_from_pretrained(model)):
         pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model, 
                                                               local_files_only=True,
-                                                              torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
+                                                              #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
+                                                              )
     else:
         pipe = StableDiffusionImg2ImgPipeline.from_single_file(model,
-                                                                #local_files_only=True,
+                                                                local_files_only=True,
                                                                 use_safetensors=True,
-                                                                torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
+                                                                #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
+                                                                )
     #pipe.to(device) 
     images = pipe(prompt=prompt, negative_prompt=nprompt, image=sr_image, strength=0.1, guidance_scale=7.5).images
     images[0].save("../../output/"+ image_id + "_upscale.png")

@@ -25,7 +25,7 @@ from RealESRGAN import RealESRGAN
 
 
 def get_model_path_from_pretrained(model_id):
-    if("revAnimated" in model_id):
+    if("rev-animated" in model_id):
         return True
     return False
 
@@ -42,6 +42,7 @@ def img2img_upscale(image_id):
     image = Image.open("../../output/"  + image_id + ".png")
     prompt = ""
     model = "../models/deliberate_v2.safetensors"
+    model = "stablediffusionapi/rev-animated"
     nprompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
     
     if 'prompt' in image.text:
@@ -57,7 +58,7 @@ def img2img_upscale(image_id):
         print("not has nprompt")
 
     if 'model' in image.text:
-        model = image.text["model"]
+        #model = image.text["model"]
         print("model: "+model)
     else:
         print("not has model")
@@ -69,12 +70,14 @@ def img2img_upscale(image_id):
     #image = image.resize((new_width, new_height))
 
     if(get_model_path_from_pretrained(model)):
+        print("from_pretrained" + model)
         pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model, 
                                                               local_files_only=True,
                                                               revision="fp16" if device.type == 'cuda' else "fp32",
                                                               torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
                                                               )
     else:
+        print("from_single_file" + model)
         pipe = StableDiffusionImg2ImgPipeline.from_single_file(model,
                                                                 local_files_only=True,
                                                                 use_safetensors=True,

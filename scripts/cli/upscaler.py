@@ -42,7 +42,7 @@ def img2img_upscale(image_id):
     image = Image.open("../../output/"  + image_id + ".png")
     prompt = ""
     model = "../models/deliberate_v2.safetensors"
-    model = "../models/arthemycomics.safetensors"
+    #model = "../models/arthemycomics.safetensors"
     nprompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
     
     if 'prompt' in image.text:
@@ -58,7 +58,7 @@ def img2img_upscale(image_id):
         print("not has nprompt")
 
     if 'model' in image.text:
-        #model = image.text["model"]
+        model = image.text["model"]
         print("model: "+model)
     else:
         print("not has model")

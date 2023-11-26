@@ -20,7 +20,7 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import StableDiffusionImg2ImgPipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
+from diffusers import DPMSolverSDEScheduler,StableDiffusionImg2ImgPipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
 from RealESRGAN import RealESRGAN
 
 
@@ -38,7 +38,7 @@ def esrgan(image_id):
     sr_image.save("../../output/"+ image_id + "_upscale.png")
 
 def img2img_upscale(image_id):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     image = Image.open("../../output/"  + image_id + ".png")
     prompt = ""
     model = "../models/deliberate_v2.safetensors"
@@ -71,18 +71,22 @@ def img2img_upscale(image_id):
     if(get_model_path_from_pretrained(model)):
         pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model, 
                                                               local_files_only=True,
-                                                              revision="fp16",
+                                                              revision="fp16" if device.type == 'cuda' else "fp32",
                                                               torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
                                                               )
     else:
         pipe = StableDiffusionImg2ImgPipeline.from_single_file(model,
                                                                 local_files_only=True,
                                                                 use_safetensors=True,
-                                                                revision="fp16",
+                                                                revision="fp16" if device.type == 'cuda' else "fp32",
                                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
                                                                 )
+    pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+    #pipe = pipe.to("mps")
+    #pipe.enable_attention_slicing()
     pipe.to(device) 
-    images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = 20, image=sr_image, strength=0.5, guidance_scale=7.5).images
+
+    images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = 10, image=sr_image, strength=0.5, guidance_scale=7.5).images
     images[0].save("../../output/"+ image_id + "_upscale.png")
 
 

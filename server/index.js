@@ -169,7 +169,8 @@ app.use('/upscale', function(req, res, next) {
     var filename = req.body.filename;
 
     var exec = require('child_process').exec;
-    var exestring = 'python3.11 ../scripts/cli/upscaler.py' + ' -i ' + filename;
+    var exestring = 'python3.11 ../scripts/cli/upscaler.py' + ' -i ' + filename 
+                    +' -d 0.5 -s 20';
 
     console.log(exestring);
     const python = exec(exestring);

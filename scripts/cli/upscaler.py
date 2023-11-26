@@ -37,7 +37,7 @@ def esrgan(image_id):
     sr_image = model.predict(image)
     sr_image.save("../../output/"+ image_id + "_upscale.png")
 
-def img2img_upscale(image_id):
+def img2img_upscale(image_id, denoise, steps):
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     image = Image.open("../../output/"  + image_id + ".png")
     prompt = ""
@@ -89,25 +89,28 @@ def img2img_upscale(image_id):
     #pipe.enable_attention_slicing()
     pipe.to(device) 
 
-    images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = 20, image=sr_image, strength=0.75, guidance_scale=7).images
+    images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = steps, image=sr_image, strength=denoise, guidance_scale=7).images
     images[0].save("../../output/"+ image_id + "_upscale.png")
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', '-i', type=str, help="image name")
-    #parser.add_argument('--denoise', '-d', type=float, help="denoising")
+    parser.add_argument('--denoise', '-d', type=float, default = 0.5, help="denoising")
+    parser.add_argument('--steps', '-s', type=int, default = 20, help="steps")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
     print('arg_image_id: ' + args.image)
+    print('arg_denoise: ' + args.denoise)
+    print('arg_steps: ' + args.steps)
 
     #if (args.node == 1):
     mydir = os.getcwd()
     mydir_tmp = mydir + "/../scripts/cli"
     mydir_new = os.chdir(mydir_tmp)
 
-    img2img_upscale(args.image)
+    img2img_upscale(args.image, args.denoise, args.steps)
     #esrgan(args.image)

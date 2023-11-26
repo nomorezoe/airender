@@ -89,13 +89,14 @@ def img2img_upscale(image_id):
     #pipe.enable_attention_slicing()
     pipe.to(device) 
 
-    images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = 10, image=sr_image, strength=0.75, guidance_scale=7).images
+    images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = 7, image=sr_image, strength=0.75, guidance_scale=7).images
     images[0].save("../../output/"+ image_id + "_upscale.png")
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', '-i', type=str, help="image name")
+    #parser.add_argument('--denoise', '-d', type=float, help="denoising")
     return parser.parse_args()
 
 

@@ -79,7 +79,7 @@ def img2img_upscale(image_id):
                                                                 use_safetensors=True,
                                                                 #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
                                                                 )
-    #pipe.to(device) 
+    pipe.to(device) 
     images = pipe(prompt=prompt, negative_prompt=nprompt, image=sr_image, strength=0.1, guidance_scale=7.5).images
     images[0].save("../../output/"+ image_id + "_upscale.png")
 

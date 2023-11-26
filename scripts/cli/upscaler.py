@@ -104,8 +104,8 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     print('arg_image_id: ' + args.image)
-    print('arg_denoise: ' + args.denoise)
-    print('arg_steps: ' + args.steps)
+    print('arg_denoise: ' + str(args.denoise))
+    print('arg_steps: ' + str(args.steps))
 
     #if (args.node == 1):
     mydir = os.getcwd()

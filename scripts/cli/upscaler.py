@@ -57,7 +57,7 @@ def img2img_upscale(image_id):
         print("not has nprompt")
 
     if 'model' in image.text:
-        model = image.text["model"]
+        #model = image.text["model"]
         print("model: "+model)
     else:
         print("not has model")

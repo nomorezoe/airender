@@ -443,7 +443,7 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
     prompt = get_styled_prompt(style, prompt)
 
     n_prompt = get_neg_prompt(model_id)
-    n_prompt = get_styled_neg_prompt(style, prompt)
+    n_prompt = get_styled_neg_prompt(style, n_prompt)
 
     start_time = time.time()
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')

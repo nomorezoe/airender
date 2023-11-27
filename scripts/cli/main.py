@@ -214,7 +214,10 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
     )
 
     pipeline.to('cuda' if device.type == 'cuda' else 'mps')
-    #setup_pipeline(pipeline, device, lora_id, vae)
+    if (isXLModel(model_id) == False):
+        setup_pipeline_lora(pipeline, lora_id)
+        setup_pipeline_vae(pipeline, device, vae)
+        setup_pipeline_negtive_embeds(pipeline, device, model_id)
 
     # masks2 = get_inpaint_masks(image, "person_yolov8n-seg.pt", 'cuda' if device.type == 'cuda' else 'cpu')
     # print(masks2)
@@ -372,9 +375,11 @@ def get_styled_prompt(style, prompt):
     print("get_styled_prompt" + style)
     style = "{prompt}"
     if(style == "painterly"):
+         #style = "{prompt}"
         style = "Watercolor painting {prompt} . Vibrant, beautiful, painterly, detailed, textural, artistic"
     elif(style == "pencil"):
-        style = "line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics"
+        style  = "Pencil sketch drawing {prompt} . black and white painting, fantasy art, photo realistic, dynamic lighting, artstation, poster, volumetric lighting, very detailed, 4k, da vinci style made with a charcoal pencil"
+        #style = "line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics"
     elif(style=="cinematic"):
         style = "cinematic film still {prompt} . shallow depth of field, vignette, highly detailed, high budget, bokeh, cinemascope, moody, epic, gorgeous, film grain, grainy"
     elif(style=="photoreal"):
@@ -385,7 +390,8 @@ def get_styled_prompt(style, prompt):
 def get_styled_neg_prompt(style, prompt):
     style = ""
     if(style == "painterly"):
-        style = "anime, photorealistic, 35mm film, deformed, glitch, low contrast, noisy"
+        style = ""
+        #style = "anime, photorealistic, 35mm film, deformed, glitch, low contrast, noisy"
     elif(style == "pencil"):
         style = "anime, photorealistic, 35mm film, deformed, glitch, blurry, noisy, off-center, deformed, cross-eyed, closed eyes, bad anatomy, ugly, disfigured, mutated, realism, realistic, impressionism, expressionism, oil, acrylic"
     elif(style=="cinematic"):
@@ -427,10 +433,17 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
         vae="None"
         if(style == "painterly"):
             model_id = "deliberate_v2"
-            lora_id = "Drawing"
+            lora_id = "Painterly-Style_LoRA"
+            scheduler_type = "DPM++2MK"
+            sampler_steps = 25
+            cfg = 7
+            clip_skip = 2
         elif(style == "pencil"):
             model_id = "deliberate_v2"
-            #lora_id = "Drawing"
+            lora_id = "Drawing"
+            scheduler_type = "DPM++2MK"
+            sampler_steps = 25
+            cfg = 5
         elif(style=="cinematic"):
             model_id = "realisticVision"
             lora_id = "CineStyle5"

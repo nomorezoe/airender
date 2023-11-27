@@ -135,7 +135,7 @@ app.use('/render', function(req, res, next) {
 
     //add style
     var usestyle = 0;
-    var style = "";
+    var style = "non_style";
     if(req.body.usestyle != undefined){
         usestyle = (req.body.usestyle == 1)?1:0;
     }

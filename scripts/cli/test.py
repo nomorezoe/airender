@@ -53,7 +53,7 @@ pipeline = StableDiffusionXLPipeline.from_single_file(
     "../models/sd_xl_base_1.0.safetensors",
     use_safetensors=True, 
     load_safety_checker=False,
-    local_files_only=True,torch_dtype=torch.float32)
+    local_files_only=True,torch_dtype=torch.float16)
 
 # prompt is passed to OAI CLIP-ViT/L-14
 prompt = "Astronaut in a jungle, cold color palette, muted colors, detailed, 8k"

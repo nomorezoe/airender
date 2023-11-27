@@ -245,7 +245,9 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                   use_xl=isXLModel(model_id))
 
     if (isXLModel(model_id) == False):
-        setup_pipeline(model.pipe, device, lora_id, vae, model_id)
+        setup_pipeline_lora(model.pipe, lora_id)
+        setup_pipeline_vae(model.pipe, device, vae)
+        setup_pipeline_negtive_embeds(model.pipe, device, model_id)
 
     # model.set_base_model('SdValar/deliberate2')
     # model.set_base_model('stablediffusionapi/deliberate-v2')
@@ -264,22 +266,8 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
 
     return imageresults
 
-
-def setup_pipeline(pipe, device, lora_id, vae, model_id):
-    # lora
-    if (lora_id != "None"):
-        pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id),local_files_only=True)
-
-    # vae
-    if(vae):
-        vae = AutoencoderKL.from_single_file("../models/vae/vae-ft-mse-840000-ema-pruned.safetensors",
-                                         local_files_only=True,
-                                         use_safetensors=True,
-                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
-        vae.to('cuda' if device.type == 'cuda' else 'mps')
-        pipe.vae = vae
-
-    # negative embedding
+def setup_pipeline_negtive_embeds(pipe, device, model_id):
+     # negative embedding
     
     pipe.load_textual_inversion("../models/negative_embeddings/bad_prompt_version2.pt",
                                 token="bad_prompt_version2",
@@ -311,6 +299,23 @@ def setup_pipeline(pipe, device, lora_id, vae, model_id):
                                 token="verybadimagenegative_v1.3",
                                 local_files_only=True,)
 
+
+def setup_pipeline_lora(pipe, lora_id):
+    # lora
+    if (lora_id != "None"):
+        pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id),local_files_only=True)
+
+def setup_pipeline_vae(pipe, device, vae):
+    # vae
+    if(vae!= "None"):
+        vae = AutoencoderKL.from_single_file("../models/vae/vae-ft-mse-840000-ema-pruned.safetensors",
+                                         local_files_only=True,
+                                         use_safetensors=True,
+                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
+        vae.to('cuda' if device.type == 'cuda' else 'mps')
+        pipe.vae = vae
+
+   
 
 def get_model_path_from_pretrained(model_id):
     if( model_id == "revAnimated"):
@@ -361,6 +366,33 @@ def get_lora(lora_id):
         return "jim_lee_offset_right_filesize.safetensors"
     else:
         return lora_id+".safetensors"
+    
+
+def get_styled_prompt(style, prompt):
+    print("get_styled_prompt" + style)
+    style = "{prompt}"
+    if(style == "painterly"):
+        style = "Watercolor painting {prompt} . Vibrant, beautiful, painterly, detailed, textural, artistic"
+    elif(style == "pencil"):
+        style = "line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics"
+    elif(style=="cinematic"):
+        style = "cinematic film still {prompt} . shallow depth of field, vignette, highly detailed, high budget, bokeh, cinemascope, moody, epic, gorgeous, film grain, grainy"
+    elif(style=="photoreal"):
+        style = "cinematic photo {prompt} . 35mm photograph, film, bokeh, professional, 4k, highly detailed"
+
+    return style.replace("{prompt}", prompt)
+
+def get_styled_neg_prompt(style, prompt):
+    style = ""
+    if(style == "painterly"):
+        style = "anime, photorealistic, 35mm film, deformed, glitch, low contrast, noisy"
+    elif(style == "pencil"):
+        style = "anime, photorealistic, 35mm film, deformed, glitch, blurry, noisy, off-center, deformed, cross-eyed, closed eyes, bad anatomy, ugly, disfigured, mutated, realism, realistic, impressionism, expressionism, oil, acrylic"
+    elif(style=="cinematic"):
+        style = "anime, cartoon, graphic, text, painting, crayon, graphite, abstract, glitch, deformed, mutated, ugly, disfigured"
+    elif(style=="photoreal"):
+        style = "drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly"
+    return style + prompt 
 
 def get_prompt(model_id):
     #style =  "Watercolor painting {prompt} . Vibrant, beautiful, painterly, detailed, textural, artistic"
@@ -386,11 +418,32 @@ def get_neg_prompt(model_id):
     return prompt
 
 
-def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength):
+def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength, use_style, style):
    
     # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
+   
+    if use_style:
+        lora_id = "None"
+        vae="None"
+        if(style == "painterly"):
+            model_id = "deliberate_v2"
+            lora_id = "Drawing"
+        elif(style == "pencil"):
+            model_id = "deliberate_v2"
+            #lora_id = "Drawing"
+        elif(style=="cinematic"):
+            model_id = "realisticVision"
+            lora_id = "CineStyle5"
+        elif(style=="photoreal"):
+            model_id = "realisticVision"
+        else:
+            model_id = "deliberate_v2"
+    
     prompt = prompt + get_prompt(model_id)
+    prompt = get_styled_prompt(style, prompt)
+
     n_prompt = get_neg_prompt(model_id)
+    n_prompt = get_styled_neg_prompt(style, prompt)
 
     start_time = time.time()
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
@@ -459,7 +512,11 @@ def parse_args():
     parser.add_argument('--scheduler','-s', type=str, help="scheduler")
     parser.add_argument('--inpaint_strength','-is', type=float, default=0.4, help="inpaint strength")
     parser.add_argument('--use_depth_map','-d', type=int, default=0, help="if use depth map")
-    parser.add_argument('--use_inpaint', '-ip', type=int, default=0, help="if use inpaint")
+    parser.add_argument('--use_inpaint', '-ip', type=int, default=1, help="if use inpaint")
+    
+    #style, painterly, pencil, cinematic, photoreal
+    parser.add_argument('--use_style', '-us', type=int, default = 0, help="if use style")
+    parser.add_argument('--style', '-st', type=str, default = "painterly", help="the style")
     return parser.parse_args()
 
 
@@ -485,6 +542,12 @@ if __name__ == "__main__":
     print ('use_depth_magp: ' + str(args.use_depth_map > 0))
     print ('use_inpaint: ' + str(args.use_inpaint > 0))
 
+    ##
+    print ('use_style' + str (args.use_style > 0))
+    print ('style' + args.style)
+
+   
+
     #eular
     #DPM++ 2M Karras
     #DPM++ SDE Karras
@@ -494,4 +557,4 @@ if __name__ == "__main__":
         mydir_new = os.chdir(mydir_tmp)
 
     main(args.image, args.use_inpaint > 0, args.use_depth_map >0, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
-         args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength)
+         args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength, args.use_style, args.style)

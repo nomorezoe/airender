@@ -36,7 +36,7 @@ app.use(cors({
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
-
+/*
 app.get('/test_env2', (req, res) => {
     var exec = require('child_process').exec;
     var exestring = 'echo $PATH'
@@ -93,7 +93,7 @@ app.get('/test_env', (req, res) => {
         console.log(`child process close all stdio with code ${code}`);
     });
 });
-
+*/
 app.post('/render_progress', (req, res) => {
     //console.log(req);
     var session = req.body.session;
@@ -133,6 +133,18 @@ app.use('/render', function(req, res, next) {
     var inpaintStrength = req.body.inpaintStrength
     var controlnetModlel = req.body.controlnetModlel
 
+    //add style
+    var usestyle = 0;
+    var style = "";
+    if(req.body.usestyle != undefined){
+        usestyle = (req.body.usestyle == 1)?1:0;
+    }
+    if(req.body.style != undefined){
+        style = req.body.style;
+    }
+    //
+
+
     var session = req.body.session;
 
     //console.log("session====" + session);
@@ -145,13 +157,17 @@ app.use('/render', function(req, res, next) {
         res.json(value);
     }
 
+    console.log(usestyle);
+    console.log(style);
+    
     generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, scheduler, inpaintStrength,
-        controlnetModlel, session, rawImg, rawImgGrid, null, responseCallBack);
+        controlnetModlel, session, rawImg, rawImgGrid, null, responseCallBack, usestyle, style);
 
         
 });
 
 app.use('/output', express.static('../output'));
+app.use('/upscaled', express.static('../upscaled'));
 
 app.listen(port, () => {
     console.log(`Admin app listening on port ${port}`);
@@ -168,9 +184,14 @@ app.use('/upscale', function(req, res, next) {
     console.log("body"+ req.body);
     var filename = req.body.filename;
 
+    var denoise = 0.5;
+    if(req.body.denoise != undefined){
+        denoise = parseFloat(req.body.denoise);
+    }
+
     var exec = require('child_process').exec;
     var exestring = 'python3.11 ../scripts/cli/upscaler.py' + ' -i ' + filename 
-                    +' -d 0.5 -s 20';
+                    +' -s 20 -d ' + denoise;
 
     console.log(exestring);
     const python = exec(exestring);
@@ -200,7 +221,7 @@ app.use('/upscale', function(req, res, next) {
 });
 
 function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, scheduler, inpaintStrength,
-    controlnetModlel, session, rawImg, rawImgGrid, progressCallBack, responseCallBack){
+    controlnetModlel, session, rawImg, rawImgGrid, progressCallBack, responseCallBack, usestyle, style){
 
 
     
@@ -256,6 +277,8 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
                         ' -s ' + scheduler +
                         ' -is ' + inpaintStrength +
                         ' -cnm ' + controlnetModlel +
+                        ' -us ' + usestyle + 
+                        ' --style ' + style +
                         ' -p "' + prompt + '"';
 
                     console.log(exestring);

@@ -544,7 +544,7 @@ class Model:
             seed=seed,
         )
         return [control_image] + results
-
+    
     @torch.inference_mode()
     def process_depth(
         self,

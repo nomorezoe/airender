@@ -35,7 +35,7 @@ def esrgan(image_id):
     model.load_weights("../models/esrgan/RealESRGAN_x2.pth", download=False)
     image = Image.open("../../output/"  + image_id + ".png").convert('RGB')
     sr_image = model.predict(image)
-    sr_image.save("../../output/"+ image_id + "_upscale.png")
+    sr_image.save("../../upscaled/"+ image_id + "_upscale.png")
 
 def img2img_upscale(image_id, denoise, steps):
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
@@ -90,14 +90,14 @@ def img2img_upscale(image_id, denoise, steps):
     pipe.to(device) 
 
     images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = steps, image=sr_image, strength=denoise, guidance_scale=7).images
-    images[0].save("../../output/"+ image_id + "_upscale.png")
+    images[0].save("../../upscaled/"+ image_id + "_upscale.png")
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', '-i', type=str, help="image name")
     parser.add_argument('--denoise', '-d', type=float, default = 0.5, help="denoising")
-    parser.add_argument('--steps', '-s', type=int, default = 20, help="steps")
+    parser.add_argument('--steps', '-s', type=int, default = 30, help="steps")
     return parser.parse_args()
 
 

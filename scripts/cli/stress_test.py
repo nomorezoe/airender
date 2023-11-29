@@ -72,11 +72,5 @@ if __name__ == "__main__":
         mydir_tmp = mydir + "/../scripts/cli"
         mydir_new = os.chdir(mydir_tmp)
 
-    pipeline_count = args.pipeline_count
-    for x in range(pipeline_count):
-        print("START PIPELINE")
-        hello_thread = threading.Thread(target=main, args=(args.image, args.use_inpaint > 0, args.use_depth_map >0, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
-            args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength, args.use_style, args.style))
-        hello_thread.start()
-        #main(args.image, args.use_inpaint > 0, args.use_depth_map >0, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
-        #    args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength, args.use_style, args.style)
+        main(args.image, args.use_inpaint > 0, args.use_depth_map >0, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
+            args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength, args.use_style, args.style)

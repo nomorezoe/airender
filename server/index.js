@@ -36,6 +36,27 @@ app.use(cors({
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
+
+app.get('/test_stress', (req, res) => {
+    var exec = require('child_process').exec;
+    var exestring = 'python3.11 ../scripts/cli/stress_test.py -n 1 -c 7 -i 5181d427-5400-4e17-808d-59e5b0b873e7 -m sd_xl_base -cs 1 -ss 30 -l None -p "drawing, style by NTY, 20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. highlighting their determined expressions. " -b 4 -cnm depth  -us 1 -st pencil -plc 1'
+
+    
+    const python = exec(exestring);
+    // collect data from script
+    python.stdout.on('data', function (data) {
+        console.log(`data: ${data}`);
+    });
+    python.stderr.on('data', (data) => {
+        console.error(`data: ${data}`);
+    });
+
+    // in close event we are sure that stream from child process is closed
+    python.on('close', (code) => {
+        console.log(`child process close all stdio with code ${code}`);
+    });
+});
+
 /*
 app.get('/test_env2', (req, res) => {
     var exec = require('child_process').exec;

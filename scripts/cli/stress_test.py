@@ -61,7 +61,7 @@ if __name__ == "__main__":
     print ('use_style' + str (args.use_style > 0))
     print ('style' + args.style)
 
-    print ('pipeline_count: ' + args.pipeline_count)
+    print ('pipeline_count: ' + str(args.pipeline_count))
 
     #eular
     #DPM++ 2M Karras

@@ -61,7 +61,7 @@ if __name__ == "__main__":
     print ('use_style' + str (args.use_style > 0))
     print ('style' + args.style)
 
-   
+    print ('pipeline_count: ' + args.pipeline_count)
 
     #eular
     #DPM++ 2M Karras
@@ -73,5 +73,6 @@ if __name__ == "__main__":
 
     pipeline_count = args.pipeline_count
     for x in range(pipeline_count):
+        print("START PIPELINE")
         main(args.image, args.use_inpaint > 0, args.use_depth_map >0, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
             args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength, args.use_style, args.style)

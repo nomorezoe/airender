@@ -306,7 +306,7 @@ def setup_pipeline_negtive_embeds(pipe, device, model_id):
 def setup_pipeline_lora(pipe, lora_id):
     # lora
     if (lora_id != "None"):
-        pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id),local_files_only=True)
+        pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id),local_files_only=True, lora_scale = 0.7)
 
 def setup_pipeline_vae(pipe, device, vae):
     # vae
@@ -378,7 +378,7 @@ def get_styled_prompt(style, prompt):
          #style = "{prompt}"
         style = "Watercolor painting {prompt} . Vibrant, beautiful, painterly, detailed, textural, artistic"
     elif(style == "pencil"):
-        style  = "Pencil sketch drawing {prompt} . black and white painting, fantasy art, photo realistic, dynamic lighting, artstation, poster, volumetric lighting, very detailed, 4k, da vinci style made with a charcoal pencil"
+        style  = "{prompt}, Pencil sketch drawing . black and white painting, fantasy art, photo realistic, dynamic lighting, artstation, poster, volumetric lighting, very detailed, 4k, da vinci style made with a charcoal pencil"
         #style = "line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics"
     elif(style=="cinematic"):
         style = "cinematic film still {prompt} . shallow depth of field, vignette, highly detailed, high budget, bokeh, cinemascope, moody, epic, gorgeous, film grain, grainy"
@@ -443,7 +443,7 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
             lora_id = "Drawing"
             scheduler_type = "DPM++2MK"
             sampler_steps = 25
-            cfg = 5
+            cfg = 6
         elif(style=="cinematic"):
             model_id = "realisticVision"
             lora_id = "CineStyle5"

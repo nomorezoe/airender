@@ -89,7 +89,7 @@ def img2img_upscale(image_id, denoise, steps):
     #pipe = pipe.to("mps")
     #pipe.enable_attention_slicing()
     pipe.to(device) 
-    pipe.enable_xformers_memory_efficient_attention()
+    pipe.enable_model_cpu_offload()
 
     images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = steps, image=sr_image, strength=denoise, guidance_scale=7).images
     images[0].save("../../upscaled/"+ image_id + "_upscale.png")

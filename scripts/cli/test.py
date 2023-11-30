@@ -7,6 +7,10 @@ import os
 import cv2
 from PIL import Image
 
+mydir = os.getcwd()
+mydir_tmp = mydir + "/../scripts/cli"
+mydir_new = os.chdir(mydir_tmp)
+
 prompt = "aerial view, a futuristic research complex in a bright foggy jungle, hard lighting"
 negative_prompt = "low quality, bad quality, sketches"
 

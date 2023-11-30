@@ -203,6 +203,7 @@ class Model:
                          generator=generator,
                          callback=callback,
                          #strength=0.99,
+                         callback_steps = 1,
                          controlnet_conditioning_scale=0.5,
                          image=control_image).images
         else:

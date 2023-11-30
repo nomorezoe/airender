@@ -20,7 +20,7 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import DPMSolverSDEScheduler,StableDiffusionImg2ImgPipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
+from diffusers import LCMScheduler,StableDiffusionImg2ImgPipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
 from RealESRGAN import RealESRGAN
 
 
@@ -41,8 +41,8 @@ def img2img_upscale(image_id, denoise, steps):
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     image = Image.open("../../output/"  + image_id + ".png")
     prompt = ""
-    #model = "../models/deliberate_v2.safetensors"
-    model = "../models/arthemycomics.safetensors"
+    model = "../models/deliberate_v2.safetensors"
+    #model = "../models/arthemycomics.safetensors"
     nprompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
     
     if 'prompt' in image.text:
@@ -58,7 +58,7 @@ def img2img_upscale(image_id, denoise, steps):
         print("not has nprompt")
 
     if 'model' in image.text:
-        #model = image.text["model"]
+        model = image.text["model"]
         print("model: "+model)
     else:
         print("not has model")
@@ -84,12 +84,17 @@ def img2img_upscale(image_id, denoise, steps):
                                                                 revision="fp16" if device.type == 'cuda' else "fp32",
                                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
                                                                 )
-    pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+        
+    pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    pipe.load_lora_weights("../models/lora/", weight_name ="pytorch_lora_weights_1.5.safetensors",
+                           local_files_only=True, use_safetensors=True, torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)    
+    #pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     
+    pipe.fuse_lora()
     #pipe = pipe.to("mps")
     #pipe.enable_attention_slicing()
     pipe.to(device) 
-    pipe.enable_model_cpu_offload()
+    #pipe.enable_model_cpu_offload()
 
     images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = steps, image=sr_image, strength=denoise, guidance_scale=7).images
     images[0].save("../../upscaled/"+ image_id + "_upscale.png")

@@ -188,6 +188,7 @@ app.use('/render', function(req, res, next) {
 });
 
 app.use('/output', express.static('../output'));
+app.use('/capture', express.static('../capture'));
 app.use('/upscaled', express.static('../upscaled'));
 
 app.listen(port, () => {

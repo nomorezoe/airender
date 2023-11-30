@@ -88,8 +88,7 @@ def img2img_upscale(image_id, denoise, steps):
       
     pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
     pipe.to(device) 
-    pipe.load_lora_weights("../models/lora/", weight_name ="pytorch_lora_weights_1.5.safetensors", device=device.type,
-                           local_files_only=True, use_safetensors=True, torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)    
+    pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")    
     #pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     
     pipe.fuse_lora()

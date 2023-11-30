@@ -85,9 +85,11 @@ def img2img_upscale(image_id, denoise, steps):
                                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
                                                                 )
     pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+    
     #pipe = pipe.to("mps")
     #pipe.enable_attention_slicing()
     pipe.to(device) 
+    pipe.enable_xformers_memory_efficient_attention()
 
     images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = steps, image=sr_image, strength=denoise, guidance_scale=7).images
     images[0].save("../../upscaled/"+ image_id + "_upscale.png")
@@ -104,7 +106,7 @@ def parse_args():
 if __name__ == "__main__":
 
     torch.backends.cuda.matmul.allow_tf32 = True
-    
+
     args = parse_args()
     print('arg_image_id: ' + args.image)
     print('arg_denoise: ' + str(args.denoise))

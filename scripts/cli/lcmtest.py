@@ -1,5 +1,10 @@
 import torch
 from diffusers import LCMScheduler, AutoPipelineForText2Image
+import os
+
+mydir = os.getcwd()
+mydir_tmp = mydir + "/../scripts/cli"
+mydir_new = os.chdir(mydir_tmp)
 
 model_id = "stabilityai/stable-diffusion-xl-base-1.0"
 adapter_id = "latent-consistency/lcm-lora-sdxl"

@@ -84,16 +84,18 @@ def img2img_upscale(image_id, denoise, steps):
                                                                 revision="fp16" if device.type == 'cuda' else "fp32",
                                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32
                                                                 )
-        
+    
+      
     pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
-    pipe.load_lora_weights("../models/lora/", weight_name ="pytorch_lora_weights_1.5.safetensors",
+    pipe.to(device) 
+    pipe.load_lora_weights("../models/lora/", weight_name ="pytorch_lora_weights_1.5.safetensors", 
                            local_files_only=True, use_safetensors=True, torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)    
     #pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     
     pipe.fuse_lora()
     #pipe = pipe.to("mps")
     #pipe.enable_attention_slicing()
-    pipe.to(device) 
+  
     #pipe.enable_model_cpu_offload()
 
     images = pipe(prompt=prompt, negative_prompt=nprompt, num_inference_steps = steps, image=sr_image, strength=denoise, guidance_scale=7).images

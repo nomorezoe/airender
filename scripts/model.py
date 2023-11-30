@@ -215,6 +215,7 @@ class Model:
                              num_inference_steps=num_steps,
                              generator=generator,
                              callback=callback,
+                             callback_steps = 1,
                              image=control_image).images
 
     @torch.inference_mode()

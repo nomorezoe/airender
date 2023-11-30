@@ -26,7 +26,7 @@ pipe = StableDiffusionXLControlNetPipeline.from_single_file(
     "../models/sd_xl_base_1.0.safetensors",
     use_safetensors=True, 
     load_safety_checker=False,
-    local_files_only=True,
+    #local_files_only=True,
     controlnet=controlnet, vae=vae, torch_dtype=torch.float32
 )
 #pipe.enable_model_cpu_offload()

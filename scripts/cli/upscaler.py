@@ -102,6 +102,9 @@ def parse_args():
 
 
 if __name__ == "__main__":
+
+    torch.backends.cuda.matmul.allow_tf32 = True
+    
     args = parse_args()
     print('arg_image_id: ' + args.image)
     print('arg_denoise: ' + str(args.denoise))

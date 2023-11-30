@@ -23,17 +23,17 @@ image = load_image(
 # initialize the models and pipeline
 controlnet_conditioning_scale = 0.5  # recommended for good generalization
 controlnet = ControlNetModel.from_pretrained(
-    "diffusers/controlnet-canny-sdxl-1.0", torch_dtype=torch.float32
+    "diffusers/controlnet-canny-sdxl-1.0", torch_dtype=torch.float16
 )
-vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float32)
+vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)
 pipe = StableDiffusionXLControlNetPipeline.from_single_file(
     "../models/sd_xl_base_1.0.safetensors",
     use_safetensors=True, 
     load_safety_checker=False,
     #local_files_only=True,
-    controlnet=controlnet, vae=vae, torch_dtype=torch.float32
+    controlnet=controlnet, vae=vae, torch_dtype=torch.float16
 )
-#pipe.enable_model_cpu_offload()
+pipe.enable_model_cpu_offload()
 
 # get canny image
 image = np.array(image)

@@ -123,6 +123,7 @@ class Model:
                     clip_skip = self.clip_skip,
                     torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
         print("sampler")
+        pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
         #sampler
         if(scheduler_type == "DPM++2MK"):
             pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")

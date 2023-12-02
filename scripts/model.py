@@ -191,6 +191,7 @@ class Model:
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
     ) -> list[PIL.Image.Image]:
         generator = torch.Generator().manual_seed(seed)
+        self.pipe.enable_attention_slicing()
         if self.use_xl:
             print("xl pipe")
             return self.pipe(prompt=prompt,

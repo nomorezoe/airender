@@ -93,7 +93,7 @@ def img2img_upscale(image_id, denoise, steps):
     
      #pipe.fuse_lora()
     #pipe = pipe.to("mps")
-    #pipe.enable_attention_slicing()
+    pipe.enable_attention_slicing()
   
     #pipe.enable_model_cpu_offload()
 

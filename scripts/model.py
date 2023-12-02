@@ -168,8 +168,6 @@ class Model:
                                                      torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32,
                                                      local_files_only=True)
         controlnet.to(self.device)
-        torch.cuda.empty_cache()
-        gc.collect()
         self.pipe.controlnet = controlnet
         self.task_name = task_name
 

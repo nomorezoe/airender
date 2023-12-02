@@ -23,7 +23,8 @@ import cv2
 import images
 import argparse
 from diffusers import AutoencoderKL, StableDiffusionInpaintPipeline
-import StyleSelectorXL
+
+import gc
 
 
 # from controlnet_aux import OpenposeDetector
@@ -478,6 +479,8 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
     #                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
     #                                                 local_files_only=True)
 
+    torch.cuda.empty_cache()
+    gc.collect()
     images = results
     # image.save("test_before.png")
     # image = start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt)
@@ -487,6 +490,9 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
             images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength)
         print(f"time -2: {time.time() - start_time}")
 
+    torch.cuda.empty_cache()
+    gc.collect()
+    
     n = batch_count
     for i in range(0, n):
         meta = PngInfo()

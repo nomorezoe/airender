@@ -18,7 +18,7 @@ import torch
 import time
 import numpy as np
 import cv2
-import images
+import gc
 import argparse
 from diffusers import StableDiffusionLatentUpscalePipeline, StableDiffusionUpscalePipeline,DDPMScheduler,DDIMScheduler
 
@@ -46,6 +46,8 @@ def main(image_id, prompt):
                               num_inference_steps=20,
                             guidance_scale=0,
                               ).images[0]
+    torch.cuda.empty_cache()
+    gc.collect()
     upscaled_image.save("../../output/" + image_id + "upscaled.png")
 
 

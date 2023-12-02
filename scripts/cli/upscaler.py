@@ -20,7 +20,7 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import LCMScheduler,StableDiffusionImg2ImgPipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
+from diffusers import DPMSolverSDEScheduler,StableDiffusionImg2ImgPipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
 from RealESRGAN import RealESRGAN
 
 
@@ -86,14 +86,14 @@ def img2img_upscale(image_id, denoise, steps):
                                                                 )
     
       
-    pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
-    pipe.to(device) 
-    pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")    
-    #pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+    # pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+    # pipe.to(device) 
+     #pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")    
+    pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     
-    pipe.fuse_lora()
+     #pipe.fuse_lora()
     #pipe = pipe.to("mps")
-    #pipe.enable_attention_slicing()
+    pipe.enable_attention_slicing()
   
     #pipe.enable_model_cpu_offload()
 

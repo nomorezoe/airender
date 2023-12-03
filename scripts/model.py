@@ -123,6 +123,9 @@ class Model:
                     clip_skip = self.clip_skip,
                     torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32)
         print("sampler")
+
+        pipe.unet.to(memory_format=torch.channels_last)
+        pipe.controlnet.to(memory_format=torch.channels_last)
         #pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
         #sampler
         if(scheduler_type == "DPM++2MK"):

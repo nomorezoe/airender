@@ -36,13 +36,15 @@ def multi_controlnet(image_id,prompt):
     depth_model_id = CONTROLNET_MODEL_IDS["depth"]
     depth_controlnet = ControlNetModel.from_pretrained(depth_model_id,
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                                                        local_files_only=True)
+                                                        #local_files_only=Tru
+                                                        )
     
     openpose_model_id = CONTROLNET_MODEL_IDS["Openpose"]
     print(openpose_model_id)
     openpose_controlnet = ControlNetModel.from_pretrained(openpose_model_id,
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                                                        local_files_only=True)
+                                                        #local_files_only=True
+                                                        )
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])
     
     pipe = StableDiffusionControlNetPipeline.from_single_file(

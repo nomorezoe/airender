@@ -527,6 +527,14 @@ def get_neg_prompt(model_id):
     #prompt = style + prompt
     return prompt
 
+def get_lora_prompt(lora_id, promot):
+    lora_prompt = ""
+    if(lora_id == "Drawing"):
+        lora_prompt = "drawing, style by NTY"
+    
+    return lora_prompt + promot
+
+
 
 def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength, use_style, style):
    
@@ -558,6 +566,7 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
     
     prompt = prompt + get_prompt(model_id)
     prompt = get_styled_prompt(style, prompt)
+    prompt = get_lora_prompt(lora_id, prompt)
 
     n_prompt = get_neg_prompt(model_id)
     n_prompt = get_styled_neg_prompt(style, n_prompt)

@@ -9,7 +9,7 @@ from controlnet_aux import (CannyDetector, ContentShuffleDetector, HEDdetector,
                             OpenposeDetector, PidiNetDetector)
 from controlnet_aux.util import HWC3
 
-from cv_utils import resize_image
+from cv_utils import resize_image_by_height
 from depth_estimator import DepthEstimator
 from image_segmentor import ImageSegmentor
 import time
@@ -63,7 +63,7 @@ class Preprocessor:
                 detect_resolution = kwargs.pop('detect_resolution')
                 image = np.array(image)
                 image = HWC3(image)
-                image = resize_image(image, resolution=detect_resolution)
+                image = resize_image_by_height(image, resolution=detect_resolution)
             image = self.model(image, **kwargs)
             return PIL.Image.fromarray(image)
         elif self.name == 'Midas':
@@ -71,10 +71,10 @@ class Preprocessor:
             image_resolution = kwargs.pop('image_resolution', 512)
             image = np.array(image)
             image = HWC3(image)
-            image = resize_image(image, resolution=detect_resolution)
+            image = resize_image_by_height(image, resolution=detect_resolution)
             image = self.model(image, **kwargs)
             image = HWC3(image)
-            image = resize_image(image, resolution=image_resolution)
+            image = resize_image_by_height(image, resolution=image_resolution)
             return PIL.Image.fromarray(image)
         else:
             return self.model(image, **kwargs)

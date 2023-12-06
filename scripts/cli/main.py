@@ -22,10 +22,10 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import AutoencoderKL, StableDiffusionInpaintPipeline
-
+from diffusers import EulerAncestralDiscreteScheduler,DPMSolverSDEScheduler,DPMSolverSinglestepScheduler,StableDiffusionControlNetPipeline, DPMSolverMultistepScheduler,AutoencoderKL, ControlNetModel, StableDiffusionInpaintPipeline
+from model import CONTROLNET_MODEL_IDS
 import gc
-
+from preprocessor import Preprocessor
 
 # from controlnet_aux import OpenposeDetector
 
@@ -238,7 +238,7 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
     # image = inpaint_it(pipeline, image, "hand_yolov8n.pt", device)
     return images
 
-
+'''
 def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024):
     
     model = Model(task_name = control_net_model, device=device,
@@ -269,6 +269,109 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
         #print("imageresults" + str(len(imageresults)))
 
     return imageresults
+'''
+
+def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
+
+    use_xl = isXLModel(model_id)
+    from_pretrained = get_model_path_from_pretrained(model_id)
+
+    #controlnet_model
+    if use_xl:
+        print("not ready yet")
+    else:
+        depth_model_id = CONTROLNET_MODEL_IDS["depth"]
+        print('depth_model_id: ' + depth_model_id)
+        depth_controlnet = ControlNetModel.from_pretrained(depth_model_id,
+                                                            torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+                                                            #local_files_only=Tru
+                                                            )
+    
+        openpose_model_id = CONTROLNET_MODEL_IDS["Openpose"]
+        print('openpose_model_id: '+openpose_model_id)
+        openpose_controlnet = ControlNetModel.from_pretrained(openpose_model_id,
+                                                            torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+                                                            #local_files_only=True
+                                                            )
+        resolution = 512
+        pose_preprocessor = Preprocessor()
+        pose_preprocessor.load("Openpose")
+        pose_control_image = pose_preprocessor(
+                    image=image,
+                    image_resolution=resolution,
+                    detect_resolution=resolution,
+                    hand_and_face=True,
+                )
+
+        depth_preprocessor = Preprocessor()
+        depth_preprocessor.load("Midas")
+        depth_control_image = depth_preprocessor(
+                    image=image,
+                    image_resolution=resolution,
+                    detect_resolution=resolution,
+                )
+
+    #pipe
+    if use_xl:
+        print("not ready yet")
+    else:
+        if(from_pretrained):
+            pipe = StableDiffusionControlNetPipeline.from_pretrained(
+                get_model_path(model_id),
+                safety_checker=None,
+                controlnet=[depth_controlnet, openpose_controlnet],
+                controlnet_conditioning_scale = [0.5,1.0],
+                local_files_only=True,
+                clip_skip=clip_skip,
+                torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32 
+            )
+        else:
+            pipe = StableDiffusionControlNetPipeline.from_single_file(
+                get_model_path(model_id),
+                safety_checker = None,
+                controlnet = [depth_controlnet, openpose_controlnet],#, openpose_controlnet
+                controlnet_conditioning_scale = [0.5,1.0],#, 1.0
+                local_files_only=True,
+                clip_skip=clip_skip,
+                torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32 
+            )     
+        setup_pipeline_lora(pipe, lora_id)
+        setup_pipeline_vae(pipe, device, vae)
+        setup_pipeline_negtive_embeds(pipe, device, model_id)
+        
+    
+    #scheduler
+    if(scheduler_type == "DPM++2MK"):
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+    elif(scheduler_type == "DPM++2SK"):
+        pipe.scheduler = DPMSolverSinglestepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+    elif(scheduler_type == "DPM++SDEK"):
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+    else:
+        pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+
+    #settings
+    pipe.to(device)
+    torch.cuda.empty_cache()
+    gc.collect()
+    #start pipe
+
+    imageresults = []
+    for i in range(0, batch_count):
+        seed=randomize_seed_fn(seed=0, randomize_seed=True)
+        generator = torch.Generator().manual_seed(seed)
+        results = pipe(prompt=prompt,
+                negative_prompt=n_prompt,
+                num_inference_steps=sampler_steps,
+                generator=generator,
+                guidance_scale=cfg,
+                callback=controlnet_progress,
+                callback_steps = 1,
+                image=[depth_control_image, pose_control_image]).images #, pose_control_image
+        imageresults= [results[0]] + imageresults
+    return imageresults
+
 
 def setup_pipeline_negtive_embeds(pipe, device, model_id):
      # negative embedding
@@ -469,7 +572,7 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
         depth_image = image
 
 
-    resolution = int(560.0 / image.height  * image.width)
+    resolution = int(512.0 / image.height  * image.width)
     resolution = min(MAX_IMAGE_RESOLUTION, resolution)
 
     results = start_controlnet_pipeline(

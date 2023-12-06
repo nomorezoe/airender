@@ -62,7 +62,7 @@ def multi_controlnet(image_id,prompt):
     torch.cuda.empty_cache()
     gc.collect()
 
-    resolution = 512
+    resolution = 256
     #resolution = min(MAX_IMAGE_RESOLUTION, resolution)
     print("resolution: "+ str(resolution))
     pose_preprocessor = Preprocessor()

@@ -50,12 +50,13 @@ def multi_controlnet(image_id,prompt):
     pipe = StableDiffusionXLControlNetPipeline.from_single_file(
                 "../models/dynavisionXLAllInOneStylized_Bakedvae.safetensors",
                 safety_checker = None,
+                use_safetensors=True, 
                 controlnet = [depth_controlnet, openpose_controlnet],#, openpose_controlnet
                 controlnet_conditioning_scale = [0.5,1.0],#, 1.0
                 local_files_only=True,
                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32 
     )     
-    #pipe.enable_xformers_memory_efficient_attention()
+    pipe.enable_xformers_memory_efficient_attention()
     pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     pipe.to(device)
     torch.cuda.empty_cache()

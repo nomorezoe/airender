@@ -48,7 +48,7 @@ def multi_controlnet(image_id,prompt):
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])
     
     pipe = StableDiffusionXLControlNetPipeline.from_single_file(
-                "../models/dynavisionXLAllInOneStylized_Bakedvae.safetensors",
+                "../models/dynavisionXL.safetensors",
                 safety_checker = None,
                 use_safetensors=True, 
                 controlnet = [depth_controlnet, openpose_controlnet],#, openpose_controlnet

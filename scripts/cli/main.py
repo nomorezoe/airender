@@ -284,8 +284,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
         depth_model_id = CONTROLNET_MODEL_IDS["depth"]
         print('depth_model_id: ' + depth_model_id)
         depth_controlnet = ControlNetModel.from_pretrained(depth_model_id,
-                                                           device_map="auto",
-                                                           torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+                                                            torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                             #local_files_only=Tru
                                                             
                                                             )
@@ -293,6 +292,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
         openpose_model_id = CONTROLNET_MODEL_IDS["Openpose"]
         print('openpose_model_id: '+openpose_model_id)
         openpose_controlnet = ControlNetModel.from_pretrained(openpose_model_id,
+                                                              
                                                             torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                             device_map="auto",
                                                             #local_files_only=True
@@ -327,8 +327,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 controlnet_conditioning_scale = [0.5,1.0],
                 local_files_only=True,
                 clip_skip=clip_skip,
-                torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32 ,
-                device_map="auto"
+                torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32 
             )
         else:
             pipe = StableDiffusionControlNetPipeline.from_single_file(
@@ -338,8 +337,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 controlnet_conditioning_scale = [0.5,1.0],#, 1.0
                 local_files_only=True,
                 clip_skip=clip_skip,
-                torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                device_map="auto"
+                torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32 
             )     
         setup_pipeline_lora(pipe, lora_id)
         setup_pipeline_vae(pipe, device, vae)
@@ -357,7 +355,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
         pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
 
     #settings
-    #pipe.to(device)
+    pipe.to(device)
     torch.cuda.empty_cache()
     gc.collect()
     #start pipe

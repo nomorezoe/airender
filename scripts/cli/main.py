@@ -272,7 +272,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
 '''
 
 def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 
     use_xl = isXLModel(model_id)
     from_pretrained = get_model_path_from_pretrained(model_id)
@@ -542,7 +542,7 @@ def get_lora_prompt(lora_id, promot):
 def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength, use_style, style):
    
     # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
-   
+    
     if use_style:
         lora_id = "None"
         vae="None"

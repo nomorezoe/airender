@@ -26,7 +26,12 @@ from diffusers import EulerAncestralDiscreteScheduler,DPMSolverSDEScheduler,DPMS
 from model import CONTROLNET_MODEL_IDS
 import gc
 from preprocessor import Preprocessor
+import json
 
+style_cache = {}
+
+MODEL_ID_DELIBERATE_V2 = "deliberate_v2"
+MODEL_ID_DELIBERATE_V4 = "deliberate_v4"
 # from controlnet_aux import OpenposeDetector
 
 def controlnet_progress(step, timestep, latents):
@@ -123,70 +128,6 @@ def inpaint(image, mask, pipeline, prompt, n_prompt, inpaint_strength):
     # return image
     return image
 
-
-'''
-
-def start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt):
-    masks2 = get_inpaint_masks(
-        image, "person_yolov8n-seg.pt", 'cuda' if device.type == 'cuda' else 'cpu')
-
-    mask_image = masks2[0]
-
-    mask_blur = 4
-    np_mask = np.array(mask_image)
-    kernel_size = 2 * int(4 * 4 + 0.5) + 1
-    np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), mask_blur)
-    np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), mask_blur)
-    mask_image = Image.fromarray(np_mask)
-
-    inpaint_full_res_padding = 32
-    mask_image = mask_image.convert('L')
-    crop_region = masking.get_crop_region(
-        np.array(mask_image), inpaint_full_res_padding)
-    crop_region = masking.expand_crop_region(
-        crop_region, 840, 560, mask_image.width, mask_image.height)
-
-    init_image = image.crop(crop_region)
-    mask_image = mask_image.crop(crop_region)
-
-    original_w = init_image.width
-    original_h = init_image.height
-
-    init_image = images.resize_image(2, init_image, 840, 560)
-    mask_image = images.resize_image(2, mask_image, 840, 560)
-
-    openpose = OpenposeDetector.from_pretrained("lllyasviel/ControlNet")
-
-    pipeline = StableDiffusionControlNetInpaintPipeline.from_single_file(
-        "../models/deliberate_v3.safetensors",
-        use_safetensors=True,
-        torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-        safety_checker=None,
-        local_files_only=True,
-        clip_skip=2,
-        controlnet=controlnet
-    )
-
-    pipeline.to('cuda' if device.type == 'cuda' else 'mps')
-    setup_pipeline(pipeline, device)
-    prompt = "a white woman"
-    control_img = openpose(init_image)
-
-    init_image.show()
-    mask_image.show()
-    control_img.show()
-
-    result = pipeline(prompt=prompt, width=840, height=560, control_image=control_img, negative_prompt=n_prompt,
-                      image=init_image, strength=0.4, mask_image=mask_image,  num_inference_steps=28, callback=progress).images[0]
-    result = images.resize_image(1, result, original_w, original_h)
-
-    image.paste(result, crop_region)
-
-    return image
-
-'''
-
-
 def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength):
     # inpaint pipe
 
@@ -199,25 +140,27 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
         #use_safetensors=True,
         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
         safety_checker=None,
+        requires_safety_checker = False,
         #load_safety_checker=False,
-        local_files_only=True,
-        clip_skip=clip_skip
+        local_files_only=True
     )
     else:
+        print("get_inpaint_model_path:" + get_inpaint_model_path(model_id))
         #print("none deliberate_v2")
         pipeline = StableDiffusionInpaintPipeline.from_single_file(
         get_inpaint_model_path(model_id),
         use_safetensors=True,
         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
         load_safety_checker=False,
-        local_files_only=True,
-        clip_skip=clip_skip
+        safety_checker=None,
+        requires_safety_checker = False,
+        local_files_only=True
     )
 
     pipeline.to('cuda' if device.type == 'cuda' else 'mps')
     if (isXLModel(model_id) == False):
-        setup_pipeline_lora(pipeline, lora_id)
-        setup_pipeline_vae(pipeline, device, vae)
+        #setup_pipeline_lora(pipeline, lora_id)
+        #setup_pipeline_vae(pipeline, device, vae)
         setup_pipeline_negtive_embeds(pipeline, device, model_id)
 
     # masks2 = get_inpaint_masks(image, "person_yolov8n-seg.pt", 'cuda' if device.type == 'cuda' else 'cpu')
@@ -237,39 +180,6 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
 
     # image = inpaint_it(pipeline, image, "hand_yolov8n.pt", device)
     return images
-
-'''
-def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024):
-    
-    model = Model(task_name = control_net_model, device=device,
-                  base_model_id=get_model_path(model_id),
-                  scheduler_type = scheduler_type,
-                  clip_skip=clip_skip,
-                  from_pretrained=get_model_path_from_pretrained(model_id),
-                  use_xl=isXLModel(model_id))
-
-    if (isXLModel(model_id) == False):
-        setup_pipeline_lora(model.pipe, lora_id)
-        setup_pipeline_vae(model.pipe, device, vae)
-        setup_pipeline_negtive_embeds(model.pipe, device, model_id)
-
-    # model.set_base_model('SdValar/deliberate2')
-    # model.set_base_model('stablediffusionapi/deliberate-v2')
-    # demo = create_demo(model.process_depth)
-
-    imageresults = []
-    n = batch_count
-    #print('start_controlnet_pipeline'+ str(n))
-    for i in range(0, n):
-        print("controlnet_start:" + str(i), flush=True)
-        result = model.process_depth(image, image, prompt=prompt, num_images=1, additional_prompt=None, negative_prompt=n_prompt, image_resolution=resolution, preprocess_resolution=resolution,
-                                     num_steps=sampler_steps, guidance_scale=cfg, seed=randomize_seed_fn(seed=0, randomize_seed=True), preprocessor_name='Midas', callback=controlnet_progress)
-        result[0].save("../../output/temp_depth.png")
-        imageresults= [result[1]] + imageresults
-        #print("imageresults" + str(len(imageresults)))
-
-    return imageresults
-'''
 
 def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024):
     #device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
@@ -323,26 +233,30 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
             pipe = StableDiffusionControlNetPipeline.from_pretrained(
                 get_model_path(model_id),
                 safety_checker=None,
-                controlnet=[depth_controlnet, openpose_controlnet],
-                controlnet_conditioning_scale = [0.5,1.0],
+                controlnet=[openpose_controlnet, depth_controlnet],
+                controlnet_conditioning_scale = [1.0,0.5],
                 local_files_only=True,
                 clip_skip=clip_skip,
-                torch_dtype=torch.float16 if self.device.type == 'cuda' else torch.float32 
+                requires_safety_checker = False,
+                torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32 
             )
         else:
+            print("model_path" + get_model_path(model_id))
             pipe = StableDiffusionControlNetPipeline.from_single_file(
                 get_model_path(model_id),
                 safety_checker = None,
-                controlnet = [depth_controlnet, openpose_controlnet],#, openpose_controlnet
-                controlnet_conditioning_scale = [0.5,1.0],#, 1.0
+                controlnet = [openpose_controlnet, depth_controlnet],#, openpose_controlnet
+                controlnet_conditioning_scale = [1.0, 0.5],#, 1.0
                 local_files_only=True,
                 clip_skip=clip_skip,
+                requires_safety_checker = False,
+    
                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32 
             )     
-        setup_pipeline_lora(pipe, lora_id)
-        setup_pipeline_vae(pipe, device, vae)
+        #setup_pipeline_lora(pipe, lora_id)
+        #setup_pipeline_vae(pipe, device, vae)
         setup_pipeline_negtive_embeds(pipe, device, model_id)
-        
+        n_prompt += ", bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
     
     #scheduler
     if(scheduler_type == "DPM++2MK"):
@@ -371,7 +285,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 guidance_scale=cfg,
                 callback=controlnet_progress,
                 callback_steps = 1,
-                image=[depth_control_image, pose_control_image]).images #, pose_control_image
+                image=[pose_control_image, depth_control_image]).images #, pose_control_image
         imageresults= [results[0]] + imageresults
     return imageresults
 
@@ -396,183 +310,67 @@ def setup_pipeline_negtive_embeds(pipe, device, model_id):
     pipe.load_textual_inversion("../models/negative_embeddings/easynegative.safetensors",
                                 token="easynegative",
                                 local_files_only=True,)
-    
-    if(model_id == "realisticVision"):
-         print("load UnrealisticDream")
-         pipe.load_textual_inversion("../models/negative_embeddings/UnrealisticDream.pt",
-                                token="UnrealisticDream",
-                                local_files_only=True,)
-         
-    if(model_id == "Arthemy Comics"):
-         print("load Arthemy Comics")
-         pipe.load_textual_inversion("../models/negative_embeddings/verybadimagenegative_v1.3.pt",
-                                token="verybadimagenegative_v1.3",
-                                local_files_only=True,)
-
-
-def setup_pipeline_lora(pipe, lora_id):
-    # lora
-    if (lora_id != "None"):
-        pipe.load_lora_weights("../models/lora", weight_name=get_lora(lora_id),local_files_only=True, lora_scale = 0.7)
-
-def setup_pipeline_vae(pipe, device, vae):
-    # vae
-    if(vae!= "None"):
-        vae = AutoencoderKL.from_single_file("../models/vae/vae-ft-mse-840000-ema-pruned.safetensors",
-                                         local_files_only=True,
-                                         use_safetensors=True,
-                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32)
-        vae.to('cuda' if device.type == 'cuda' else 'mps')
-        pipe.vae = vae
-
-   
 
 def get_model_path_from_pretrained(model_id):
-    if( model_id == "revAnimated"):
-        return True
-    elif(model_id == "realitycheckXL"):
+    if(model_id == MODEL_ID_DELIBERATE_V4):
         return False
     return False
 
 def isXLModel(model_id):
-    if(model_id == "realitycheckXL"):
-        return True
-    if(model_id == "sd_xl_base"):
-        return True
+    if(model_id == MODEL_ID_DELIBERATE_V4):
+        return False
     return False
 
 def get_model_path(model_id):
-    if (model_id == "realisticVision"):
-        return "../models/realisticVisionV51_v51VAE.safetensors"
-    elif (model_id == "revAnimated"):
-        return "stablediffusionapi/rev-animated"
-    elif (model_id == "Arthemy Comics"):
-        return "../models/arthemycomics.safetensors"
-    elif (model_id == "sd_xl_base"):
-        return "../models/sd_xl_base_1.0.safetensors"
-    else:
-        return "../models/"+model_id+".safetensors"
+    if(model_id == MODEL_ID_DELIBERATE_V4):
+        return "../models/Deliberate_v4.safetensors"
+    if(model_id == MODEL_ID_DELIBERATE_V2):
+        return "../models/deliberate_v2.safetensors"
+    return "../models/Deliberate_v4.safetensors"
 
 
 def get_inpaint_model_path(model_id):
-    if (model_id == "realisticVision"):
-        return "../models/realisticVisionV51_v51VAE-inpainting.safetensors"
-    elif (model_id == "revAnimated"):
-        return "../models/revAnimated_v121Inp-inpainting.safetensors"
-    elif (model_id == "deliberate_v2"):
-        return "../models/deliberate_v3-inpainting.safetensors"
-    elif (model_id == "Arthemy Comics"):
-        return "../models/arthemycomics-inpainting.safetensors"
-    elif (model_id == "realitycheckXL"):
-        return "../modes/realitycheckXL.safetensors"
-    else:
-        return "../models/"+model_id+"-inpainting.safetensors"
-
-
-def get_lora(lora_id):
-    if (lora_id == "empty"):
-        return None
-    elif (lora_id == "Jim Lee"):
-        return "jim_lee_offset_right_filesize.safetensors"
-    else:
-        return lora_id+".safetensors"
+    if(model_id == MODEL_ID_DELIBERATE_V4):
+        return "../models/Deliberate_v4-inpainting.safetensors"
+    if(model_id == MODEL_ID_DELIBERATE_V2):
+        return "5w4n/deliberate-v2-inpainting"
+    return "../models/Deliberate_v4-inpainting.safetensors"
     
 
 def get_styled_prompt(style, prompt):
-    print("get_styled_prompt" + style)
-    style = "{prompt}"
-    if(style == "painterly"):
-         #style = "{prompt}"
-        style = "Watercolor painting {prompt} . Vibrant, beautiful, painterly, detailed, textural, artistic"
-    elif(style == "pencil"):
-        style  = "{prompt}, Pencil sketch drawing . black and white painting, fantasy art, photo realistic, dynamic lighting, artstation, poster, volumetric lighting, very detailed, 4k, da vinci style made with a charcoal pencil"
-        #style = "line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics"
-    elif(style=="cinematic"):
-        style = "cinematic film still {prompt} . shallow depth of field, vignette, highly detailed, high budget, bokeh, cinemascope, moody, epic, gorgeous, film grain, grainy"
-    elif(style=="photoreal"):
-        style = "cinematic photo {prompt} . 35mm photograph, film, bokeh, professional, 4k, highly detailed"
+    style_prompt = ""
+    if(style in style_cache):
+        print("hse" + style)
+        style_prompt = style_cache[style]["prompt"]
+    else:
+        print("no hse" + style)
+        style_prompt = style_cache["base"]["prompt"]
 
-    return style.replace("{prompt}", prompt)
+    print("style_prompt: " + style_prompt)
+    return style_prompt.replace("{prompt}", prompt)
 
-def get_styled_neg_prompt(style, prompt):
-    style = ""
-    if(style == "painterly"):
-        style = ""
-        #style = "anime, photorealistic, 35mm film, deformed, glitch, low contrast, noisy"
-    elif(style == "pencil"):
-        style = "anime, photorealistic, 35mm film, deformed, glitch, blurry, noisy, off-center, deformed, cross-eyed, closed eyes, bad anatomy, ugly, disfigured, mutated, realism, realistic, impressionism, expressionism, oil, acrylic"
-    elif(style=="cinematic"):
-        style = "anime, cartoon, graphic, text, painting, crayon, graphite, abstract, glitch, deformed, mutated, ugly, disfigured"
-    elif(style=="photoreal"):
-        style = "drawing, painting, crayon, sketch, graphite, impressionist, noisy, blurry, soft, deformed, ugly"
-    return style + prompt 
-
-def get_prompt(model_id):
-    #style =  "Watercolor painting {prompt} . Vibrant, beautiful, painterly, detailed, textural, artistic"
-    prompt = ""
-    if(model_id == "realisticVision"):
-        prompt = "RAW photo, subject, 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3"
-    elif (model_id == "Arthemy Comics"):
-        prompt = "(artwork:1.2),(lineart:1.33),[CHARACTER | SETTING | EMOTIONS],(hyperdefined),(inked-art),[COLORS | AESTHETIC],complex lighting,(flat colors),ultradetailed,(fine-details:1.2),absurdres,(atmosphere)"
-     
-    #prompt = style.replace(" {prompt}", prompt)
-    return prompt
-
-def get_neg_prompt(model_id):
-    #style = "anime, photorealistic, 35mm film, deformed, glitch, low contrast, noisy"
-    prompt = ""
-    if(model_id == "realisticVision"):
-        prompt = "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime), text, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, UnrealisticDream" #
-    elif (model_id == "Arthemy Comics"):
-        prompt = "bad-hands-5, verybadimagenegative_v1.3, (sketch),lowres,(text,words:1.3),watermark,(simple background),glitch,(jpeg-artifact:1.2),compressed, jpeg" #
-    prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck, bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
-
-    #prompt = style + prompt
-    return prompt
-
-def get_lora_prompt(lora_id, promot):
-    lora_prompt = ""
-    if(lora_id == "Drawing"):
-        lora_prompt = "drawing, style by NTY"
+def get_styled_neg_prompt(style):
+    if(style in style_cache):
+        return style_cache[style]["negative_prompt"]
     
-    return lora_prompt + promot
+    return style_cache["base"]["negative_prompt"]
 
 
+def load_styles():
+    file = open("../style_selector/sdxl_styles.json")
+    data = json.load(file)
+    for item in data:
+        #print(item["name"])
+        style_cache[item["name"]] = item
+    
+    #print(style_cache)
+    
 
 def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength, use_style, style):
-   
-    # prompt = "20-year-old African American woman and a chic Caucasian woman, in New York park, reminiscent of a Nike commercial. Warm, golden hues envelop the scene, highlighting their determined expressions. The soft, natural light adds a cinematic touch to the atmosphere, Photography, inspired by Gordon Parks."
     
-    if use_style:
-        lora_id = "None"
-        vae="None"
-        if(style == "painterly"):
-            model_id = "deliberate_v2"
-            lora_id = "Painterly-Style_LoRA"
-            scheduler_type = "DPM++2MK"
-            sampler_steps = 25
-            cfg = 7
-            clip_skip = 2
-        elif(style == "pencil"):
-            model_id = "deliberate_v2"
-            lora_id = "Drawing"
-            scheduler_type = "DPM++2MK"
-            sampler_steps = 25
-            cfg = 6
-        elif(style=="cinematic"):
-            model_id = "realisticVision"
-            lora_id = "CineStyle5"
-        elif(style=="photoreal"):
-            model_id = "realisticVision"
-        else:
-            model_id = "deliberate_v2"
-    
-    prompt = prompt + get_prompt(model_id)
     prompt = get_styled_prompt(style, prompt)
-    prompt = get_lora_prompt(lora_id, prompt)
-
-    n_prompt = get_neg_prompt(model_id)
-    n_prompt = get_styled_neg_prompt(style, n_prompt)
+    n_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck"
+    n_prompt = get_styled_neg_prompt(style) + n_prompt
 
     start_time = time.time()
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
@@ -590,16 +388,10 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
     results = start_controlnet_pipeline(
         image, depth_image, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution)
 
-    # controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11p_sd15_openpose",
-    #                                                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-    #                                                 local_files_only=True)
-
     torch.cuda.empty_cache()
     gc.collect()
     images = results
-    # image.save("test_before.png")
-    # image = start_inpaint_character_pipeline(controlnet, image, device, prompt, n_prompt)
-    # image.save("test_inpaint.png")
+    
     if(use_inpaint):
         images = start_inpaint_pipeline(
             images, batch_count, device, prompt, n_prompt, model_id, lora_id, clip_skip, vae, inpaint_strength)
@@ -615,7 +407,7 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
         meta.add_text("nprompt", n_prompt)
         meta.add_text("model", get_model_path(model_id))
         meta.add_text("in paintmodel", get_inpaint_model_path(model_id))
-        meta.add_text("lora", get_lora(lora_id))
+        #meta.add_text("lora", get_lora(lora_id))
         meta.add_text("cfg", str(cfg))
         meta.add_text("clip skip", str(clip_skip))
         meta.add_text("sampler steps", str(sampler_steps))
@@ -681,7 +473,6 @@ if __name__ == "__main__":
     print ('style' + args.style)
 
    
-
     #eular
     #DPM++ 2M Karras
     #DPM++ SDE Karras
@@ -689,6 +480,9 @@ if __name__ == "__main__":
         mydir = os.getcwd()
         mydir_tmp = mydir + "/../scripts/cli"
         mydir_new = os.chdir(mydir_tmp)
+
+    load_styles()
+    
 
     main(args.image, args.use_inpaint > 0, args.use_depth_map >0, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
          args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength, args.use_style, args.style)

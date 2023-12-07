@@ -261,7 +261,7 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
     var imageGridFileName = imgname + '_grid.png';
     var imageGridLocation = dirpath + imageGridFileName;
 
-    var batchcount = 4;
+    var batchcount = 1;
     var progress = 0;
 
     var currentImage = 0;
@@ -289,7 +289,7 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
                     var exec = require('child_process').exec;
                     var exestring = 'python3.11 ../scripts/cli/main.py -n 1 -c ' + cfg +
                         ' -i ' + imgname +
-                        ' -m "' + model + '"' + 
+                        ' -m deliberate_v4 ' + 
                         ' -cs ' + clipskip +
                         ' -ss ' + sampleSteps +
                         ' -l "' + lora + '"' + 
@@ -299,8 +299,8 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
                         ' -s ' + scheduler +
                         ' -is ' + inpaintStrength +
                         ' -cnm ' + controlnetModlel +
-                        ' -us ' + usestyle + 
-                        ' --style ' + style +
+                        ' -us ' + '1' + 
+                        ' --style ' + '"' + style + '"' + 
                         ' -p "' + prompt + '"';
 
                     console.log(exestring);
@@ -340,7 +340,7 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
 
                     });
                     python.stderr.on('data', (data) => {
-                        console.error(`data: ${data}`);
+                        console.error(`err data: ${data}`);
                     });
 
                     // in close event we are sure that stream from child process is closed

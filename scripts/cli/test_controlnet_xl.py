@@ -34,11 +34,13 @@ def multi_controlnet(image_id,prompt):
     image = Image.open("../../capture/" + image_id + ".png")
     #image = resize_image(2, image, 768, 512)
     print("load depth")
+    '''
     depth_model_id = CONTROLNET_MODEL_XL_IDS["depth"]
     depth_controlnet = ControlNetModel.from_pretrained(depth_model_id,
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                         #local_files_only=Tru
-                                                        ).to(device)
+                                                 ).to(device)
+    '''  
     print("load openpose")
     openpose_model_id = CONTROLNET_MODEL_XL_IDS["Openpose"]
     print(openpose_model_id)

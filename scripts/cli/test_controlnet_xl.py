@@ -45,6 +45,7 @@ def multi_controlnet(image_id,prompt):
     openpose_controlnet = ControlNetModel.from_single_file("https://huggingface.co/thibaud/controlnet-openpose-sdxl-1.0/blob/main/control-lora-openposeXL2-rank256.safetensors",
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                         use_safetensors=True, 
+                                                        variant="fp16",
                                                         #local_files_only=True
                                                         ).to(device)
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])

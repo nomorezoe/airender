@@ -42,9 +42,9 @@ def multi_controlnet(image_id,prompt):
     print("load openpose")
     openpose_model_id = CONTROLNET_MODEL_XL_IDS["Openpose"]
     print(openpose_model_id)
-    openpose_controlnet = ControlNetModel.from_single_file("https://huggingface.co/thibaud/controlnet-openpose-sdxl-1.0/blob/main/OpenPoseXL2.safetensors",
+    openpose_controlnet = ControlNetModel.from_pretrained("thibaud/controlnet-openpose-sdxl-1.0",
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                                                        use_safetensors=True, 
+                                                        #use_safetensors=True, 
                                                         #variant="fp16",
                                                         #local_files_only=True
                                                         ).to(device)

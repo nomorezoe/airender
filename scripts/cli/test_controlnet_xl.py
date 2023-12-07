@@ -41,8 +41,9 @@ def multi_controlnet(image_id,prompt):
     
     openpose_model_id = CONTROLNET_MODEL_XL_IDS["Openpose"]
     print(openpose_model_id)
-    openpose_controlnet = ControlNetModel.from_pretrained(openpose_model_id,
+    openpose_controlnet = ControlNetModel.from_single_file("https://huggingface.co/lllyasviel/sd_control_collection/blob/main/thibaud_xl_openpose.safetensors",
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+                                                        use_safetensors=True, 
                                                         #local_files_only=True
                                                         )
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])
@@ -51,17 +52,18 @@ def multi_controlnet(image_id,prompt):
                 "../models/dynavisionXL.safetensors",
                 safety_checker = None,
                 use_safetensors=True, 
-                controlnet = [depth_controlnet, openpose_controlnet],#, openpose_controlnet
-                controlnet_conditioning_scale = [0.5,1.0],#, 1.0
-                local_files_only=True
+                controlnet = openpose_controlnet,#, openpose_controlnet
+                #ontrolnet_conditioning_scale = [0.5,1.0],#, 1.0
+                local_files_only=True,
+                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
     ).to(device)     
-    pipe.enable_sequential_cpu_offload()
+    #pipe.enable_sequential_cpu_offload()
     #pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     #pipe.to(device)
     torch.cuda.empty_cache()
     gc.collect()
 
-    resolution = 256
+    resolution = 512
     #resolution = min(MAX_IMAGE_RESOLUTION, resolution)
     print("resolution: "+ str(resolution))
     pose_preprocessor = Preprocessor()
@@ -72,7 +74,7 @@ def multi_controlnet(image_id,prompt):
                 detect_resolution=resolution,
                 hand_and_face=True,
             )
-    #pose_control_image.show()
+    pose_control_image.show()
 
     depth_preprocessor = Preprocessor()
     depth_preprocessor.load("Midas")
@@ -93,7 +95,7 @@ def multi_controlnet(image_id,prompt):
             generator=generator,
             #callback=callback,
             #callback_steps = 1,
-            image=[depth_control_image, pose_control_image]).images #, pose_control_image
+            image=pose_control_image).images #, pose_control_image
 
     results[0].save("../../output/" + image_id +"_multicontrol.png")
 

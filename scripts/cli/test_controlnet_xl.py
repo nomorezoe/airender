@@ -33,21 +33,22 @@ def multi_controlnet(image_id,prompt):
 
     image = Image.open("../../capture/" + image_id + ".png")
     #image = resize_image(2, image, 768, 512)
+    print("load depth")
     depth_model_id = CONTROLNET_MODEL_XL_IDS["depth"]
     depth_controlnet = ControlNetModel.from_pretrained(depth_model_id,
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                         #local_files_only=Tru
-                                                        )
-    
+                                                        ).to(device)
+    print("load openpose")
     openpose_model_id = CONTROLNET_MODEL_XL_IDS["Openpose"]
     print(openpose_model_id)
     openpose_controlnet = ControlNetModel.from_single_file("https://huggingface.co/lllyasviel/sd_control_collection/blob/main/thibaud_xl_openpose.safetensors",
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                         use_safetensors=True, 
                                                         #local_files_only=True
-                                                        )
+                                                        ).to(device)
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])
-    
+    print("load pipe")
     pipe = StableDiffusionXLControlNetPipeline.from_single_file(
                 "../models/dynavisionXL.safetensors",
                 safety_checker = None,

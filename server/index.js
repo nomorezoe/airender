@@ -261,7 +261,7 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
     var imageGridFileName = imgname + '_grid.png';
     var imageGridLocation = dirpath + imageGridFileName;
 
-    var batchcount = 1;
+    var batchcount = 4;
     var progress = 0;
 
     var currentImage = 0;

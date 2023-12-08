@@ -234,7 +234,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 get_model_path(model_id),
                 safety_checker=None,
                 controlnet=[openpose_controlnet, depth_controlnet],
-                controlnet_conditioning_scale = [1.0,0.5],
+                controlnet_conditioning_scale = [1.0,0.43],
                 local_files_only=True,
                 clip_skip=clip_skip,
                 requires_safety_checker = False,

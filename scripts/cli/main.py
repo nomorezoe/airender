@@ -235,7 +235,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 safety_checker=None,
                 controlnet=[openpose_controlnet, depth_controlnet],
                 controlnet_conditioning_scale = [1.0,0.43],
-                local_files_only=True,
+                #local_files_only=True,
                 clip_skip=clip_skip,
                 requires_safety_checker = False,
                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32 
@@ -247,7 +247,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 safety_checker = None,
                 controlnet = [openpose_controlnet, depth_controlnet],#, openpose_controlnet
                 controlnet_conditioning_scale = [1.0, 0.5],#, 1.0
-                local_files_only=True,
+                #local_files_only=True,
                 clip_skip=clip_skip,
                 requires_safety_checker = False,
     

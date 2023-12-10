@@ -22,7 +22,7 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import EulerAncestralDiscreteScheduler,DPMSolverSDEScheduler,DPMSolverSinglestepScheduler,StableDiffusionControlNetPipeline, DPMSolverMultistepScheduler,AutoencoderKL, ControlNetModel, StableDiffusionInpaintPipeline
+from diffusers import LCMScheduler,EulerAncestralDiscreteScheduler,DPMSolverSDEScheduler,DPMSolverSinglestepScheduler,StableDiffusionControlNetPipeline, DPMSolverMultistepScheduler,AutoencoderKL, ControlNetModel, StableDiffusionInpaintPipeline
 from model import CONTROLNET_MODEL_IDS
 import gc
 from preprocessor import Preprocessor
@@ -256,6 +256,10 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
         #setup_pipeline_lora(pipe, lora_id)
         #setup_pipeline_vae(pipe, device, vae)
         setup_pipeline_negtive_embeds(pipe, device, model_id)
+        #lcm
+        pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
+
         n_prompt += ", bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
     
     #scheduler

@@ -36,19 +36,20 @@ def multi_controlnet(image_id,prompt):
     print("load depth")
    
     depth_model_id = CONTROLNET_MODEL_XL_IDS["depth"]
-    depth_controlnet = ControlNetModel.from_pretrained(depth_model_id,
+    depth_controlnet = ControlNetModel.from_single_file("https://civitai.com/api/download/models/152324",
+                                                        use_safetensors=True, 
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                                                        local_files_only=True
+                                                        #local_files_only=True
                                                  ).to(device)
      
     print("load openpose")
     openpose_model_id = CONTROLNET_MODEL_XL_IDS["Openpose"]
     print(openpose_model_id)
-    openpose_controlnet = ControlNetModel.from_pretrained("thibaud/controlnet-openpose-sdxl-1.0",
+    openpose_controlnet = ControlNetModel.from_single_file(" https://civitai.com/api/download/models/151451",
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                                                        #use_safetensors=True, 
+                                                        use_safetensors=True, 
                                                         #variant="fp16",
-                                                        local_files_only=True
+                                                        #local_files_only=True
                                                         ).to(device)
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])
     print("load pipe")

@@ -101,6 +101,8 @@ def multi_controlnet(image_id,prompt):
             #callback_steps = 1,
             image=[pose_control_image, depth_control_image]).images #, pose_control_image
 
+    pose_control_image.save("../../output/" + image_id +"_pose.png")
+    depth_control_image.save("../../output/" + image_id +"_depth.png")
     results[0].save("../../output/" + image_id +"_multicontrol.png")
 
 

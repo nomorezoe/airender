@@ -38,7 +38,7 @@ def multi_controlnet(image_id,prompt):
     depth_model_id = CONTROLNET_MODEL_XL_IDS["depth"]
     depth_controlnet = ControlNetModel.from_pretrained(depth_model_id,
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                                                        #local_files_only=Tru
+                                                        local_files_only=Tru
                                                  ).to(device)
      
     print("load openpose")
@@ -48,7 +48,7 @@ def multi_controlnet(image_id,prompt):
                                                         torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                         #use_safetensors=True, 
                                                         #variant="fp16",
-                                                        #local_files_only=True
+                                                        local_files_only=True
                                                         ).to(device)
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])
     print("load pipe")
@@ -95,7 +95,7 @@ def multi_controlnet(image_id,prompt):
     generator = torch.Generator().manual_seed(seed)
     results = pipe(prompt=prompt,
             negative_prompt=negative_prompt,
-            num_inference_steps=20,
+            num_inference_steps=30,
             generator=generator,
             #callback=callback,
             #callback_steps = 1,

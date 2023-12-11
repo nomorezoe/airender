@@ -21,7 +21,7 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import ControlNetModel,StableDiffusionXLControlNetPipeline, DPMSolverSDEScheduler,StableDiffusionImg2ImgPipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
+from diffusers import ControlNetModel,StableDiffusionXLControlNetPipeline, DPMSolverMultistepScheduler,StableDiffusionImg2ImgPipeline,StableDiffusionLatentUpscalePipeline,DDPMScheduler,DDIMScheduler
 from diffusers.pipelines.controlnet import MultiControlNetModel
 from model import CONTROLNET_MODEL_XL_IDS
 from preprocessor import Preprocessor
@@ -62,7 +62,7 @@ def multi_controlnet(image_id,prompt):
                  torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
     ).to(device)     
     pipe.enable_sequential_cpu_offload()
-    pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     #pipe.to(device)
     torch.cuda.empty_cache()
     gc.collect()
@@ -95,7 +95,7 @@ def multi_controlnet(image_id,prompt):
     generator = torch.Generator().manual_seed(seed)
     results = pipe(prompt=prompt,
             negative_prompt=negative_prompt,
-            num_inference_steps=70,
+            num_inference_steps=30,
             generator=generator,
             #callback=callback,
             #callback_steps = 1,

@@ -61,8 +61,8 @@ def multi_controlnet(image_id,prompt):
                 #local_files_only=True,
                  torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
     ).to(device)     
-    #pipe.enable_sequential_cpu_offload()
-    #pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
+    pipe.enable_sequential_cpu_offload()
+    pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     #pipe.to(device)
     torch.cuda.empty_cache()
     gc.collect()
@@ -78,7 +78,7 @@ def multi_controlnet(image_id,prompt):
                 detect_resolution=resolution,
                 hand_and_face=True,
             )
-    pose_control_image.show()
+    #pose_control_image.show()
 
     depth_preprocessor = Preprocessor()
     depth_preprocessor.load("Midas")
@@ -87,7 +87,7 @@ def multi_controlnet(image_id,prompt):
                 image_resolution=resolution,
                 detect_resolution=resolution,
             )
-    depth_control_image.show()
+    #depth_control_image.show()
     #pipe.enable_model_cpu_offload()
     
     negative_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck"

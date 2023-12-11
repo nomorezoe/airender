@@ -61,7 +61,7 @@ def multi_controlnet(image_id,prompt):
                 #local_files_only=True,
                  torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
     ).to(device)     
-    pipe.enable_sequential_cpu_offload()
+    #pipe.enable_sequential_cpu_offload()
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
     #pipe.to(device)
     torch.cuda.empty_cache()

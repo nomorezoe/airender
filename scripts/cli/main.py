@@ -257,8 +257,8 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
         #setup_pipeline_vae(pipe, device, vae)
         setup_pipeline_negtive_embeds(pipe, device, model_id)
         #lcm
-        pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
-        pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
+        #pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        #pipe.load_lora_weights("latent-consistency/lcm-lora-sdv1-5")
 
         n_prompt += ", bad_prompt_version2, bad-artist, bad-hands-5, ng_deepnegative_v1_75t, easynegative"
     

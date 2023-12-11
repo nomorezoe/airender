@@ -95,7 +95,7 @@ def multi_controlnet(image_id,prompt):
     generator = torch.Generator().manual_seed(seed)
     results = pipe(prompt=prompt,
             negative_prompt=negative_prompt,
-            num_inference_steps=50,
+            num_inference_steps=70,
             generator=generator,
             #callback=callback,
             #callback_steps = 1,

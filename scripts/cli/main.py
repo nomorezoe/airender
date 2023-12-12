@@ -22,7 +22,8 @@ import numpy as np
 import cv2
 import images
 import argparse
-from diffusers import LCMScheduler,EulerAncestralDiscreteScheduler,DPMSolverSDEScheduler,DPMSolverSinglestepScheduler,StableDiffusionControlNetPipeline, DPMSolverMultistepScheduler,AutoencoderKL, ControlNetModel, StableDiffusionInpaintPipeline
+from diffusers.pipelines.controlnet import MultiControlNetModel
+from diffusers import StableDiffusionXLControlNetPipeline,EulerAncestralDiscreteScheduler,DPMSolverSDEScheduler,DPMSolverSinglestepScheduler,StableDiffusionControlNetPipeline, DPMSolverMultistepScheduler,AutoencoderKL, ControlNetModel, StableDiffusionInpaintPipeline
 from model import CONTROLNET_MODEL_IDS
 import gc
 from preprocessor import Preprocessor
@@ -32,6 +33,7 @@ style_cache = {}
 
 MODEL_ID_DELIBERATE_V2 = "deliberate_v2"
 MODEL_ID_DELIBERATE_V4 = "deliberate_v4"
+MODEL_ID_DYNAVISION_XL = "dynavisionXL"
 # from controlnet_aux import OpenposeDetector
 
 def controlnet_progress(step, timestep, latents):
@@ -189,7 +191,22 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
 
     #controlnet_model
     if use_xl:
-        print("not ready yet")
+        depth_controlnet = ControlNetModel.from_pretrained("diffusers/controlnet-zoe-depth-sdxl-1.0",
+                                                        device_map=None,
+                                                        low_cpu_mem_usage=False,
+                                                        #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+                                                        local_files_only=True
+                                                        ).to(device)  
+        
+        openpose_controlnet = ControlNetModel.from_pretrained("thibaud/controlnet-openpose-sdxl-1.0",
+                                                          device_map=None,
+                                                        low_cpu_mem_usage=False,
+                                                        #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+                                                        #use_safetensors=True, 
+                                                        #variant="fp16",
+                                                        local_files_only=True
+                                                        ).to(device)  
+        
     else:
         depth_model_id = CONTROLNET_MODEL_IDS["depth"]
         print('depth_model_id: ' + depth_model_id)
@@ -207,27 +224,19 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                                                             device_map="auto",
                                                             #local_files_only=True
                                                             )
-        resolution = 512
-        pose_preprocessor = Preprocessor()
-        pose_preprocessor.load("Openpose")
-        pose_control_image = pose_preprocessor(
-                    image=image,
-                    image_resolution=resolution,
-                    detect_resolution=resolution,
-                    hand_and_face=True,
-                )
-
-        depth_preprocessor = Preprocessor()
-        depth_preprocessor.load("Midas")
-        depth_control_image = depth_preprocessor(
-                    image=image,
-                    image_resolution=resolution,
-                    detect_resolution=resolution,
-                )
+        
 
     #pipe
     if use_xl:
-        print("not ready yet")
+        pipe = StableDiffusionXLControlNetPipeline.from_single_file(
+                get_model_path(model_id),
+                safety_checker = None,
+                use_safetensors=True, 
+                controlnet = MultiControlNetModel([openpose_controlnet, depth_controlnet]),#, openpose_controlnet
+                controlnet_conditioning_scale = [1.0, 0.5],#, 1.0
+                local_files_only=True,
+                torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
+    ).to(device)     
     else:
         if(from_pretrained):
             pipe = StableDiffusionControlNetPipeline.from_pretrained(
@@ -276,8 +285,28 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
     pipe.to(device)
     torch.cuda.empty_cache()
     gc.collect()
-    #start pipe
 
+    #control images
+    resolution = 512
+    pose_preprocessor = Preprocessor()
+    pose_preprocessor.load("Openpose")
+    pose_control_image = pose_preprocessor(
+                image=image,
+                image_resolution=resolution,
+                detect_resolution=resolution,
+                hand_and_face=True,
+            )
+
+    depth_preprocessor = Preprocessor()
+    depth_preprocessor.load("Midas")
+    depth_control_image = depth_preprocessor(
+                image=image,
+                image_resolution=resolution,
+                detect_resolution=resolution,
+            )
+    
+
+    #start pipe
     imageresults = []
     for i in range(0, batch_count):
         seed=randomize_seed_fn(seed=0, randomize_seed=True)
@@ -318,11 +347,15 @@ def setup_pipeline_negtive_embeds(pipe, device, model_id):
 def get_model_path_from_pretrained(model_id):
     if(model_id == MODEL_ID_DELIBERATE_V4):
         return False
+    if(model_id == MODEL_ID_DYNAVISION_XL):
+        return False
     return False
 
 def isXLModel(model_id):
     if(model_id == MODEL_ID_DELIBERATE_V4):
         return False
+    if(model_id == MODEL_ID_DYNAVISION_XL):
+        return True
     return False
 
 def get_model_path(model_id):
@@ -330,6 +363,8 @@ def get_model_path(model_id):
         return "../models/Deliberate_v4.safetensors"
     if(model_id == MODEL_ID_DELIBERATE_V2):
         return "../models/deliberate_v2.safetensors"
+    if(model_id == MODEL_ID_DYNAVISION_XL):
+        return "../models/dynavisionXL.safetensors"
     return "../models/Deliberate_v4.safetensors"
 
 

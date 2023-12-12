@@ -45,7 +45,6 @@ def multi_controlnet(image_id,prompt):
      
     print("load openpose")
     openpose_model_id = CONTROLNET_MODEL_XL_IDS["Openpose"]
-    print(openpose_model_id)
     openpose_controlnet = ControlNetModel.from_pretrained("thibaud/controlnet-openpose-sdxl-1.0",
                                                           device_map=None,
                                                         low_cpu_mem_usage=False,

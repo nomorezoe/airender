@@ -191,13 +191,14 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
 
     #controlnet_model
     if use_xl:
+        print("load xl depth")
         depth_controlnet = ControlNetModel.from_pretrained("diffusers/controlnet-zoe-depth-sdxl-1.0",
                                                         device_map=None,
                                                         low_cpu_mem_usage=False,
                                                         #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                         local_files_only=True
                                                         ).to(device)  
-        
+        print("load xl openpose")
         openpose_controlnet = ControlNetModel.from_pretrained("thibaud/controlnet-openpose-sdxl-1.0",
                                                           device_map=None,
                                                         low_cpu_mem_usage=False,
@@ -228,6 +229,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
 
     #pipe
     if use_xl:
+        print("load xl pipe")
         pipe = StableDiffusionXLControlNetPipeline.from_single_file(
                 get_model_path(model_id),
                 safety_checker = None,

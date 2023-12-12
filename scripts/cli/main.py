@@ -185,7 +185,7 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
 
 def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024, depth_strength =1.0, pose_strength=0.5):
     #device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
-
+    depth_strength = 0.33
     use_xl = isXLModel(model_id)
     from_pretrained = get_model_path_from_pretrained(model_id)
 

@@ -36,28 +36,31 @@ def multi_controlnet(image_id,prompt):
     print("load depth")
    
     depth_model_id = CONTROLNET_MODEL_XL_IDS["depth"]
-    depth_controlnet = ControlNetModel.from_single_file("https://civitai.com/api/download/models/152324",
-                                                        use_safetensors=True, 
-                                                        torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+    depth_controlnet = ControlNetModel.from_pretrained("diffusers/controlnet-zoe-depth-sdxl-1.0",
+                                                        device_map=None,
+                                                        low_cpu_mem_usage=False,
+                                                        #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                         #local_files_only=True
-                                                 ).to(device)
+                                                 )
      
     print("load openpose")
     openpose_model_id = CONTROLNET_MODEL_XL_IDS["Openpose"]
     print(openpose_model_id)
-    openpose_controlnet = ControlNetModel.from_single_file(" https://civitai.com/api/download/models/151451",
-                                                        torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                                                        use_safetensors=True, 
+    openpose_controlnet = ControlNetModel.from_pretrained("thibaud/controlnet-openpose-sdxl-1.0",
+                                                          device_map=None,
+                                                        low_cpu_mem_usage=False,
+                                                        #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
+                                                        #use_safetensors=True, 
                                                         #variant="fp16",
                                                         #local_files_only=True
-                                                        ).to(device)
+                                                        )
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])
     print("load pipe")
     pipe = StableDiffusionXLControlNetPipeline.from_single_file(
                 "../models/dynavisionXL.safetensors",
                 safety_checker = None,
                 use_safetensors=True, 
-                controlnet = [openpose_controlnet, depth_controlnet],#, openpose_controlnet
+                controlnet = MultiControlNetModel([openpose_controlnet, depth_controlnet]),#, openpose_controlnet
                 controlnet_conditioning_scale = [1.0, 0.5],#, 1.0
                 #local_files_only=True,
                  torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
@@ -96,7 +99,7 @@ def multi_controlnet(image_id,prompt):
     generator = torch.Generator().manual_seed(seed)
     results = pipe(prompt=prompt,
             negative_prompt=negative_prompt,
-            num_inference_steps=30,
+            num_inference_steps=25,
             generator=generator,
             #callback=callback,
             #callback_steps = 1,

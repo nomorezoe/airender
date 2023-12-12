@@ -40,8 +40,8 @@ def multi_controlnet(image_id,prompt):
                                                         device_map=None,
                                                         low_cpu_mem_usage=False,
                                                         #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
-                                                        #local_files_only=True
-                                                 )
+                                                        local_files_only=True
+                                                        ).to(device)  
      
     print("load openpose")
     openpose_model_id = CONTROLNET_MODEL_XL_IDS["Openpose"]
@@ -52,8 +52,8 @@ def multi_controlnet(image_id,prompt):
                                                         #torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,
                                                         #use_safetensors=True, 
                                                         #variant="fp16",
-                                                        #local_files_only=True
-                                                        )
+                                                        local_files_only=True
+                                                        ).to(device)  
     #MultiControlNetModel mcontrolnet = MultiControlNetModel([controlnet1, controlnet2])
     print("load pipe")
     pipe = StableDiffusionXLControlNetPipeline.from_single_file(
@@ -62,8 +62,8 @@ def multi_controlnet(image_id,prompt):
                 use_safetensors=True, 
                 controlnet = MultiControlNetModel([openpose_controlnet, depth_controlnet]),#, openpose_controlnet
                 controlnet_conditioning_scale = [1.0, 0.5],#, 1.0
-                #local_files_only=True,
-                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
+                local_files_only=True,
+                torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
     ).to(device)     
     #pipe.enable_sequential_cpu_offload()
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++")
@@ -92,7 +92,7 @@ def multi_controlnet(image_id,prompt):
                 detect_resolution=resolution,
             )
     #depth_control_image.show()
-    #pipe.enable_model_cpu_offload()
+    pipe.enable_model_cpu_offload()
     
     negative_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck"
     seed=randomize_seed_fn(seed=0, randomize_seed=True)

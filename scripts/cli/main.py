@@ -183,7 +183,7 @@ def start_inpaint_pipeline(images, batch_count, device, prompt, n_prompt, model_
     # image = inpaint_it(pipeline, image, "hand_yolov8n.pt", device)
     return images
 
-def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024):
+def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution=1024, depth_strength =1.0, pose_strength=0.5):
     #device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
 
     use_xl = isXLModel(model_id)
@@ -235,7 +235,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 safety_checker = None,
                 use_safetensors=True, 
                 controlnet = MultiControlNetModel([openpose_controlnet, depth_controlnet]),#, openpose_controlnet
-                controlnet_conditioning_scale = [1.0, 0.5],#, 1.0
+                controlnet_conditioning_scale = [pose_strength,depth_strength],#, 1.0
                 local_files_only=True,
                 torch_dtype=torch.float16 if device.type == 'cuda' else torch.float32,                                             
     ).to(device)     
@@ -245,7 +245,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 get_model_path(model_id),
                 safety_checker=None,
                 controlnet=[openpose_controlnet, depth_controlnet],
-                controlnet_conditioning_scale = [1.0,0.43],
+                controlnet_conditioning_scale = [pose_strength,depth_strength],
                 #local_files_only=True,
                 clip_skip=clip_skip,
                 requires_safety_checker = False,
@@ -257,7 +257,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                 get_model_path(model_id),
                 safety_checker = None,
                 controlnet = [openpose_controlnet, depth_controlnet],#, openpose_controlnet
-                controlnet_conditioning_scale = [1.0, 0.5],#, 1.0
+                controlnet_conditioning_scale = [pose_strength,depth_strength],#, 1.0
                 #local_files_only=True,
                 clip_skip=clip_skip,
                 requires_safety_checker = False,
@@ -407,7 +407,7 @@ def load_styles():
     #print(style_cache)
     
 
-def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength, use_style, style):
+def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, inpaint_strength, use_style, style, depth_strength, pose_strength):
     
     prompt = get_styled_prompt(style, prompt)
     n_prompt = "Blurry, ugly, tiling, poorly drawn hands, poorly drawn feet, poorly drawn face, out of frame, extra limbs, disfigured, deformed, body out of frame, bad anatomy, watermark, signature, cut off, Low quality, Bad quality, Long neck"
@@ -427,7 +427,7 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
     resolution = min(MAX_IMAGE_RESOLUTION, resolution)
 
     results = start_controlnet_pipeline(
-        image, depth_image, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution)
+        image, depth_image, batch_count, device, prompt, n_prompt, control_net_model, model_id, scheduler_type, lora_id, cfg, clip_skip, sampler_steps, vae, resolution, depth_strength, pose_strength)
 
     torch.cuda.empty_cache()
     gc.collect()
@@ -481,6 +481,8 @@ def parse_args():
     parser.add_argument('--use_depth_map','-d', type=int, default=0, help="if use depth map")
     parser.add_argument('--use_inpaint', '-ip', type=int, default=1, help="if use inpaint")
     
+    parser.add_argument('--depth_strength','-ds', type=float, default=0.4, help="depth strength")
+    parser.add_argument('--pose_strength','-ps', type=float, default=0.4, help="pose strength")
     #style, painterly, pencil, cinematic, photoreal
     parser.add_argument('--use_style', '-us', type=int, default = 0, help="if use style")
     parser.add_argument('--style', '-st', type=str, default = "painterly", help="the style")
@@ -505,6 +507,8 @@ if __name__ == "__main__":
     print ('scheduler: ' + str(args.scheduler))
     # DPM++2MK, DPM++2SK, DPM++SDEK, EULARA
     print ('inpaint_strength: ' + str(args.inpaint_strength))
+    print ('depth_strength: ' + str(args.depth_strength))
+    print ('pose_strength: ' + str(args.pose_strength))
 
     print ('use_depth_magp: ' + str(args.use_depth_map > 0))
     print ('use_inpaint: ' + str(args.use_inpaint > 0))
@@ -526,4 +530,4 @@ if __name__ == "__main__":
     
 
     main(args.image, args.use_inpaint > 0, args.use_depth_map >0, args.batch_count, args.prompt, args.control_net_model, args.model, args.scheduler, args.lora,
-         args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength, args.use_style, args.style)
+         args.cfg, args.clipskip, args.sampler_step, args.vae > 0, args.inpaint_strength, args.use_style, args.style, args.depth_strength, args.pose_strength)

@@ -151,7 +151,11 @@ app.use('/render', function(req, res, next) {
     var vae = (req.body.vae == 1)? 1:0;
     var sampleSteps = req.body.sampleSteps;
     var scheduler = req.body.scheduler;
-    var inpaintStrength = req.body.inpaintStrength
+    var inpaintStrength = req.body.inpaintStrength;
+
+    var depthStrength = req.body.depthStrength
+    var poseStrength = req.body.poseStrength
+
     var controlnetModlel = req.body.controlnetModlel
 
     //add style
@@ -182,7 +186,7 @@ app.use('/render', function(req, res, next) {
     console.log(style);
     
     generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, scheduler, inpaintStrength,
-        controlnetModlel, session, rawImg, rawImgGrid, null, responseCallBack, usestyle, style);
+        controlnetModlel, session, rawImg, rawImgGrid, null, responseCallBack, usestyle, style, depthStrength, poseStrength);
 
         
 });
@@ -243,7 +247,7 @@ app.use('/upscale', function(req, res, next) {
 });
 
 function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, scheduler, inpaintStrength,
-    controlnetModlel, session, rawImg, rawImgGrid, progressCallBack, responseCallBack, usestyle, style){
+    controlnetModlel, session, rawImg, rawImgGrid, progressCallBack, responseCallBack, usestyle, style, depthStrength, poseStrength){
 
 
     
@@ -289,7 +293,8 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
                     var exec = require('child_process').exec;
                     var exestring = 'python3.11 ../scripts/cli/main.py -n 1 -c ' + cfg +
                         ' -i ' + imgname +
-                        ' -m deliberate_v4 ' + 
+                        ' -m ' + model +
+                        ' -c ' + cfg +
                         ' -cs ' + clipskip +
                         ' -ss ' + sampleSteps +
                         ' -l "' + lora + '"' + 
@@ -298,10 +303,13 @@ function generate(cfg, model, clipskip, lora, prompt, vae, sampleSteps, schedule
                         ' -v ' + vae +
                         ' -s ' + scheduler +
                         ' -is ' + inpaintStrength +
+                        ' -ds ' + depthStrength +
+                        ' -ps ' + poseStrength +
                         ' -cnm ' + controlnetModlel +
                         ' -us ' + '1' + 
                         ' --style ' + '"' + style + '"' + 
-                        ' -p "' + prompt + '"';
+                        ' -p "' + prompt + '"' + 
+                        ' --use_inpaint ' + (model == "deliberate_v4" ?1:0);
 
                     console.log(exestring);
                     const python = exec(exestring);

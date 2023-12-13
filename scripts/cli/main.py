@@ -221,7 +221,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
                                                             
                                                             )
     
-        openpose_model_id = CONTROLNET_MODEL_IDS["Openpose"]
+        openpose_model_id = CONTROLNET_MODEL_IDS["DWpose"]
         print('openpose_model_id: '+openpose_model_id)
         openpose_controlnet = ControlNetModel.from_pretrained(openpose_model_id,
                                                               
@@ -233,7 +233,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
 
     #pipe
     if use_xl:
-        print("load xl pipe")
+        print("load xl pipe" + pose_strength +":" + depth_strength)
         pipe = StableDiffusionXLControlNetPipeline.from_single_file(
                 get_model_path(model_id),
                 safety_checker = None,

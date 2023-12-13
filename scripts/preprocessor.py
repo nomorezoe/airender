@@ -36,7 +36,7 @@ class Preprocessor:
         elif name == 'Openpose':
             self.model = OpenposeDetector.from_pretrained(self.MODEL_ID)
         elif name == 'DWpose':
-            self.model = DWposeDetector.from_pretrained(self.MODEL_ID)
+            self.model = DWposeDetector.from_pretrained("yzd-v/DWPose")
         elif name == 'PidiNet':
             self.model = PidiNetDetector.from_pretrained(self.MODEL_ID)
         elif name == 'NormalBae':

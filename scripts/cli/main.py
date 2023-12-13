@@ -233,7 +233,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
 
     #pipe
     if use_xl:
-        print("load xl pipe" + pose_strength +":" + depth_strength)
+        print("load xl pipe" + str(pose_strength) +":" + str(depth_strength))
         pipe = StableDiffusionXLControlNetPipeline.from_single_file(
                 get_model_path(model_id),
                 safety_checker = None,

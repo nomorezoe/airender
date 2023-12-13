@@ -36,6 +36,7 @@ CONTROLNET_MODEL_IDS = {
 CONTROLNET_MODEL_XL_IDS = {
     'depth':'diffusers/controlnet-depth-sdxl-1.0',
     'Openpose':'thibaud/controlnet-openpose-sdxl-1.0',
+    'DWpose':'thibaud/controlnet-openpose-sdxl-1.0',
 }
 
 def download_all_controlnet_weights() -> None:

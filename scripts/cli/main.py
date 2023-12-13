@@ -293,7 +293,7 @@ def start_controlnet_pipeline(image, depthImage, batch_count, device, prompt, n_
     gc.collect()
 
     #control images
-    resolution = 512
+    resolution = 1024
     pose_preprocessor = Preprocessor()
     pose_preprocessor.load("Openpose")
     pose_control_image = pose_preprocessor(

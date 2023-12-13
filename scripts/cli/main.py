@@ -423,9 +423,9 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
     
     image = np.array(image)
     image = HWC3(image)
-    image = resize_image_by_height(image, resolution = 512)
+    image = resize_image_by_height(image, resolution = 1024)
     image = PIL.Image.fromarray(image)
-    image = center_crop(image, 512, 512)
+    image = center_crop(image, 1024, 1024)
 
     #image.show()
 

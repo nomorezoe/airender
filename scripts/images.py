@@ -12,6 +12,25 @@ from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
+def center_crop(img, new_width=None, new_height=None):        
+
+    width, height = img.size
+
+    if new_width is None:
+        new_width = min(width, height)
+
+    if new_height is None:
+        new_height = min(width, height)
+
+    left = int(np.ceil((width - new_width) / 2))
+    right = width - int(np.floor((width - new_width) / 2))
+
+    top = int(np.ceil((height - new_height) / 2))
+    bottom = height - int(np.floor((height - new_height) / 2))
+
+    center_cropped_img = img.crop((left, top, right, bottom))
+
+    return center_cropped_img
 
 
 def resize_image(resize_mode, im, width, height, upscaler_name=None):

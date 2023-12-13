@@ -2,12 +2,13 @@ import gc
 
 import numpy as np
 import PIL.Image
+from controlnet_aux.util import HWC3
 import torch
 from controlnet_aux import (CannyDetector, ContentShuffleDetector, HEDdetector,
                             LineartAnimeDetector, LineartDetector,
                             MidasDetector, MLSDdetector, NormalBaeDetector,
-                            OpenposeDetector, PidiNetDetector)
-from controlnet_aux.util import HWC3
+                            OpenposeDetector, PidiNetDetector,DWposeDetector)
+
 
 from cv_utils import resize_image_by_height
 from depth_estimator import DepthEstimator
@@ -34,6 +35,8 @@ class Preprocessor:
             self.model = MLSDdetector.from_pretrained(self.MODEL_ID)
         elif name == 'Openpose':
             self.model = OpenposeDetector.from_pretrained(self.MODEL_ID)
+        elif name == 'DWpose':
+            self.model = DWposeDetector.from_pretrained(self.MODEL_ID)
         elif name == 'PidiNet':
             self.model = PidiNetDetector.from_pretrained(self.MODEL_ID)
         elif name == 'NormalBae':

@@ -26,8 +26,12 @@ from diffusers.pipelines.controlnet import MultiControlNetModel
 from diffusers import StableDiffusionXLControlNetPipeline,EulerAncestralDiscreteScheduler,DPMSolverSDEScheduler,DPMSolverSinglestepScheduler,StableDiffusionControlNetPipeline, DPMSolverMultistepScheduler,AutoencoderKL, ControlNetModel, StableDiffusionInpaintPipeline
 from model import CONTROLNET_MODEL_IDS
 import gc
-from preprocessor import Preprocessor
+from preprocessor import Preprocessor, resize_image_by_height
+from images import center_crop
 import json
+
+import PIL.Image
+from controlnet_aux.util import HWC3
 
 style_cache = {}
 
@@ -417,6 +421,14 @@ def main(image_id, use_inpaint, use_depth_map, batch_count, prompt, control_net_
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps')
     image = Image.open("../../capture/" + image_id + ".png")
     
+    image = np.array(image)
+    image = HWC3(image)
+    image = resize_image_by_height(image, resolution = 512)
+    image = PIL.Image.fromarray(image)
+    image = center_crop(image, 512, 512)
+
+    #image.show()
+
     if use_depth_map:
         depth_image = Image.open("../../capture/" + image_id + "_grid.png")
     else:

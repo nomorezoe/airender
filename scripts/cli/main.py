@@ -38,6 +38,7 @@ style_cache = {}
 MODEL_ID_DELIBERATE_V2 = "deliberate_v2"
 MODEL_ID_DELIBERATE_V4 = "deliberate_v4"
 MODEL_ID_DYNAVISION_XL = "dynavisionXL"
+MODEL_ID_REALISM_ENGINE_XL = "RealismEngineXL"
 # from controlnet_aux import OpenposeDetector
 
 def controlnet_progress(step, timestep, latents):
@@ -355,12 +356,16 @@ def get_model_path_from_pretrained(model_id):
         return False
     if(model_id == MODEL_ID_DYNAVISION_XL):
         return False
+    if(model_id == MODEL_ID_REALISM_ENGINE_XL):
+        return False
     return False
 
 def isXLModel(model_id):
     if(model_id == MODEL_ID_DELIBERATE_V4):
         return False
     if(model_id == MODEL_ID_DYNAVISION_XL):
+        return True
+    if(model_id == MODEL_ID_REALISM_ENGINE_XL):
         return True
     return False
 
@@ -371,6 +376,8 @@ def get_model_path(model_id):
         return "../models/deliberate_v2.safetensors"
     if(model_id == MODEL_ID_DYNAVISION_XL):
         return "../models/dynavisionXL.safetensors"
+    if(model_id == MODEL_ID_REALISM_ENGINE_XL):
+        return "../models/RealismEngineXL.safetensors"
     return "../models/Deliberate_v4.safetensors"
 
 
